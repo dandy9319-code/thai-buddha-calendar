@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 【修正】強制設定寬度為 1200px，讓手機顯示電腦版面 (可縮放) -->
+    <!-- 強制設定寬度為 1200px -->
     <meta name="viewport" content="width=1200">
     <title>泰國佛堂_共用行事曆</title>
     
@@ -27,7 +27,7 @@
             --text-secondary: #8D6E63; 
             --border-color: #EFEBE9;   
             --accent-color: #8D6E63;   /* 暖褐色 (按鈕主色) */
-            --primary-action: #4FC3F7; /* 【維持】清透藍 (新增按鈕) */
+            --primary-action: #a3daff; /* 【維持】清透藍 (新增按鈕) */
             --border-radius: 10px;     
         }
 
@@ -35,8 +35,7 @@
             background-color: var(--bg-color);
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
             color: var(--text-primary);
-            /* 確保在寬螢幕設定下，背景能滿版 */
-            min-width: 1200px;
+            min-width: 1200px; /* 配合 viewport */
         }
         
         .container { max-width: 1200px; margin-top: 40px; margin-bottom: 80px; }
@@ -306,6 +305,29 @@
             box-shadow: 0 3px 8px rgba(239, 154, 154, 0.4);
             transform: translateY(-1px);
         }
+
+        /* 【關鍵修正】手機版 Modal 強制置中 (解決視窗變形與跑位) */
+        @media (max-width: 767.98px) {
+            /* 強制讓 Modal 忽略 1200px 的 viewport */
+            .modal-dialog {
+                max-width: 90vw !important; /* 使用視窗寬度的 90% */
+                margin: 1.75rem auto !important;
+                position: fixed !important; /* 固定定位 */
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%) !important; /* 正中央 */
+            }
+            
+            /* 確保彈出時背景遮罩能覆蓋整個虛擬寬度 */
+            .modal-backdrop {
+                width: 1200px !important; /* 跟 viewport 一樣寬 */
+                height: 100% !important;
+            }
+
+            /* 手機版行事曆列表模式優化 */
+            .fc-list-event-title {
+                white-space: normal !important; /* 允許換行 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -418,7 +440,6 @@
 
                     <div class="mb-3" id="colorSection">
                         <label class="form-label text-secondary small fw-bold">標籤顏色</label>
-                        <!-- data-color 屬性已綁定，確保選色正確 -->
                         <div id="colorPalette" class="d-flex flex-wrap gap-2"></div>
                     </div>
 
@@ -431,9 +452,7 @@
                         <input type="text" class="form-control mt-2" id="captchaInput" placeholder="請輸入上方數字" required>
                     </div>
                     <div class="d-grid gap-2">
-                        <!-- 儲存按鈕 -->
                         <button type="submit" class="btn btn-save-modal">儲存資料</button>
-                        <!-- 刪除按鈕 -->
                         <button type="button" id="deleteBtn" class="btn btn-delete-modal" style="display:none;" onclick="confirmDelete()">刪除此資料</button>
                     </div>
                 </form>
@@ -718,6 +737,7 @@ const UIManager = {
             }
         } else {
             colorSection.style.display = 'block';
+            // 載入上次選擇的顏色
             const lastColor = localStorage.getItem('lastPersonColor');
             const defaultColor = (lastColor && PERSON_COLORS.includes(lastColor)) ? lastColor : PERSON_COLORS[0];
             
@@ -747,11 +767,8 @@ const UIManager = {
     renderLinkList: function() {
         const container = document.getElementById('savedLinksContainer');
         const list = document.getElementById('savedLinksList');
-        const badge = document.getElementById('linkCountBadge');
         list.innerHTML = '';
         
-        badge.innerText = `${this.currentLinks.length}/3`;
-
         if (this.currentLinks.length === 0) {
             container.style.display = 'none';
             return;
@@ -841,9 +858,7 @@ const UIManager = {
         document.getElementById('startTime').value = t; document.getElementById('endTime').value = t;
         
         this.generateCaptcha(); 
-        // 重置為空，確保 toggleFormFields 會去抓 localStorage
-        document.getElementById('selectedColor').value = ''; 
-        this.toggleFormFields();
+        this.toggleFormFields(); 
         new bootstrap.Modal(document.getElementById('eventModal')).show();
     },
 
@@ -856,7 +871,7 @@ const UIManager = {
         document.getElementById('eventType').value = type;
         document.getElementById('eventTitle').value = e.title;
 
-        // 【修正】編輯時，強制覆蓋為該事件的顏色
+        // 編輯時，強制覆蓋為該事件的顏色
         const bgColor = e.backgroundColor;
         
         // 切換狀態 (會觸發預設選色)
@@ -873,9 +888,7 @@ const UIManager = {
         const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
         this.isEditingPastActivity = false;
         if (originalEvent.start && type === 'activity') {
-            // 修正結束日期判斷 (FullCalendar end +1，存檔時已+1，這裡顯示時要判斷準確)
             const evtEndStr = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : DateEngine.getLocalDateString(originalEvent.start);
-            
             if (evtEndStr <= todayStr) {
                 this.isEditingPastActivity = true;
             }
@@ -895,7 +908,7 @@ const UIManager = {
         document.getElementById('linkUrl').value = '';
         document.getElementById('urlSafetyFeedback').innerHTML = '';
 
-        // 重新檢查是否顯示連結區 (因為上面 toggle 已經跑過一次了，這裡要再確認一次編輯狀態)
+        // 重新檢查是否顯示連結區
         if (this.isEditingPastActivity && type === 'activity') {
             document.getElementById('completedSection').style.display = 'block';
             this.renderLinkList();
