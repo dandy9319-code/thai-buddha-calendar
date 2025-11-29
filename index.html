@@ -1,4 +1,4 @@
-<!-- v2.16 | Lighter Pink & Fix Mobile Border | 2025-09-30 -->
+<!-- v2.18 | More-Link Positioned Top-Left (Natural Flow) | 2025-11-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.16
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.18
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -62,7 +62,7 @@
            -------------------------------------- */
         #calendar a {
             text-decoration: none !important;
-            color: inherit; /* 繼承原本設定的顏色 */
+            color: inherit; 
         }
         
         .fc-daygrid-day-number,
@@ -149,16 +149,16 @@
             }
         }
 
-        /* 自然流排版 */
+        /* [v2.18] More Link 定位：回歸自然流，但靠左上方 */
         .fc-daygrid-more-link {
             position: relative !important; 
-            display: block !important;
-            width: 100%;
-            text-align: center;
+            display: inline-block !important; /* 改為 inline-block 確保不佔用整行寬度 */
+            width: auto;
+            text-align: left;
             margin-top: 1px !important;
+            margin-left: 2px; /* 稍微推開 */
             z-index: 10;
-            background-color: rgba(255, 255, 255, 0.6); 
-            border-radius: 4px;
+            background-color: transparent; /* 不再需要遮罩 */
         }
 
         .fc-event-main {
@@ -168,9 +168,9 @@
             display: block !important;
         }
 
-        /* [v2.16] Activity Color Class Updated */
+        /* [v2.17] Activity Color Class Updated */
         .event-type-activity { 
-            background-color: #f7d0f5; /* Lighter Pink */
+            background-color: #ffe9f3; /* Lighter Macaron Pink */
             border-left: 4px solid #fa436b !important; /* Dark Pink Border */
             color: #5D4037 !important; 
             font-weight: bold; 
@@ -187,7 +187,6 @@
             text-decoration: none !important;
             display: inline-block;
             opacity: 0.9;
-            width: 100%;
         }
         .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
@@ -237,7 +236,7 @@
                 position: relative;
             } 
             
-            /* 日期欄位高度壓縮 */
+            /* [v2.11] 日期欄位高度壓縮 (移除日期跟活動間的空白) */
             .fc-daygrid-day-top { 
                 flex-direction: row; 
                 padding: 0px 2px !important; 
@@ -258,6 +257,8 @@
             .fc-daygrid-day-events {
                 margin-top: 0 !important; 
                 margin-bottom: 0 !important;
+                /* [v2.18] 確保 More Link 在第一個位置 */
+                display: block !important; 
             }
             
             /* 手機版事件膠囊：極致緊湊 */
@@ -281,7 +282,15 @@
                 border-left: 4px solid #fa436b !important;
             }
             
-            .fc-more-link { font-size: 0.7rem; margin-top: 0; }
+            /* [v2.18] 手機版 More Link 樣式 */
+            .fc-more-link { 
+                font-size: 0.7rem; 
+                margin-top: 0; 
+                display: block !important; 
+                text-align: left;
+                padding-left: 2px;
+                background-color: transparent; /* 移除背景 */
+            }
 
             /* Dashboard Styles */
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
@@ -507,14 +516,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.16
+// 🏗️ 系統架構 (System Architecture) - v2.17
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.16] Updated Activity Color to Lighter Pink (#f7d0f5 / #fa436b)
-    static get COLOR_ACTIVITY() { return '#f7d0f5'; } 
+    // [v2.17] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
+    static get COLOR_ACTIVITY() { return '#ffe9f3'; } 
     // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() { 
         return [
@@ -1205,7 +1214,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', true); // [v2.6] Revert to true to fill space
+            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
