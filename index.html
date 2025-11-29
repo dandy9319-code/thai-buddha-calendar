@@ -1,4 +1,4 @@
-<!-- v1.6 | Compact Rows & UI Tweaks | 2025-09-30 -->
+<!-- v2.7 | Fix Missing More-Link Bug on Desktop | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.6 Refined
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.7
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -34,9 +34,9 @@
             background-color: var(--bg-color);
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
             color: var(--text-primary);
+            overscroll-behavior-y: none; 
         }
         
-        /* 預設 Container (電腦版) */
         .container { max-width: 1200px; margin-top: 40px; margin-bottom: 40px; }
         
         h2 { 
@@ -58,60 +58,137 @@
         }
 
         /* --------------------------------------
-           1. 電腦版/通用 UI 優化 (質感提升)
+           按鈕樣式：Ghost Button (預設透明，選取實心)
            -------------------------------------- */
-        /* 優化行事曆上方按鈕 */
         .fc-button-primary {
-            background-color: var(--accent-color) !important;
-            border-color: var(--accent-color) !important;
-            border-radius: 6px !important; 
-            padding: 3px 10px !important;  
-            font-size: 0.9rem !important;
+            background-color: transparent !important; 
+            border: 1px solid var(--accent-color) !important; 
+            color: var(--text-secondary) !important; 
+            
+            border-radius: 4px !important; 
+            padding: 0px 6px !important;  
+            font-size: 0.8rem !important;
             box-shadow: none !important;   
-            font-weight: 500 !important;
+            font-weight: 600 !important;
             transition: all 0.2s ease !important;
+            line-height: 1.8 !important; 
+            height: 28px !important;     
+            margin: 0 1px !important;
         }
+        
+        /* 選取狀態 (Active) */
+        .fc-button-primary.fc-button-active, 
+        .fc-button-primary:active {
+            background-color: var(--accent-color) !important;
+            color: #ffffff !important;
+            box-shadow: none !important;
+        }
+
         .fc-button-primary:hover {
-            background-color: #795548 !important;
+            background-color: rgba(141, 110, 99, 0.1) !important;
+            color: var(--text-primary) !important;
             transform: translateY(-1px);
         }
+        
+        .fc-button-primary.fc-button-active:hover {
+            background-color: var(--text-primary) !important;
+            color: #ffffff !important;
+        }
+        
         .fc-button-primary:focus { box-shadow: none !important; }
-        .fc-icon { font-size: 1rem !important; } 
+        
+        .fc-icon { 
+            font-size: 0.9rem !important; 
+            vertical-align: middle;
+        }
 
-        /* 標題列優化 */
         .fc-toolbar-title { 
-            font-size: 1.5rem !important; 
+            font-size: 1.4rem !important; 
             color: var(--text-primary); 
             font-weight: 700; 
         }
 
         /* --------------------------------------
-           [v1.6 新增] 事件通用樣式 - 極致緊湊化
+           [v2.7] 事件與格子樣式 - 預留底部空間 (Padding Reservation)
            -------------------------------------- */
+        
+        /* 1. 電腦版設定 */
+        @media (min-width: 768px) {
+            .fc-daygrid-day-frame {
+                height: 120px !important; /* 固定高度 */
+                min-height: 120px !important;
+                max-height: 120px !important;
+                overflow: hidden; 
+                position: relative; 
+                /* [關鍵] 預留底部 24px 給連結，這會讓 FullCalendar 提早截斷內容 */
+                padding-bottom: 24px !important; 
+            }
+        }
+
+        /* 2. 手機版設定 */
+        @media (max-width: 767.98px) {
+            .fc-daygrid-day-frame { 
+                /* 高度由 JS 動態控制 */
+                overflow: hidden; 
+                position: relative;
+                /* [關鍵] 手機版也預留同樣空間 */
+                padding-bottom: 24px !important; 
+            } 
+        }
+
+        /* [v2.7] 連結絕對置底，填滿預留空間 */
+        .fc-daygrid-more-link {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            
+            height: 24px !important;      /* 剛好填滿 padding-bottom */
+            line-height: 24px !important; /* 垂直置中 */
+            
+            z-index: 100 !important;
+            background-color: var(--card-bg) !important; /* 實心背景，防止穿透 */
+            
+            margin: 0 !important;
+            display: block !important;
+            width: 100%;
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.03); /* 微微的分隔線增加質感 */
+        }
+
+        /* 事件膠囊 */
         .fc-event { 
             cursor: pointer; border: none !important; 
             box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
             font-size: 0.8rem; 
-            /* 縮小上下邊距 */
             margin-bottom: 1px !important; 
             margin-top: 0 !important;
-            border-radius: 4px !important; 
-            padding: 0 4px !important; /* 縮小內距 */   
-            line-height: 1.15 !important; /* 縮小行高 */   
+            border-radius: 3px !important; 
+            padding: 0 4px !important;   
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
         }
-        
-        /* 調整 More Link (展開更多) 的樣式 */
+        .fc-event-main {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            display: block !important;
+        }
+
+        /* More Link 文字樣式 */
         .fc-more-link {
             color: var(--text-secondary) !important;
-            font-size: 0.8rem;
-            font-weight: bold;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-decoration: none !important;
-            display: block;
-            text-align: center;
-            line-height: 1;
-            margin-top: 2px;
+            display: inline-block;
+            opacity: 0.9;
+            width: 100%;
         }
-        .fc-more-link:hover { background-color: rgba(0,0,0,0.05); border-radius: 4px; }
+        .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
         /* =========================================
            📱 手機版適配 (< 768px)
@@ -120,32 +197,27 @@
             body { background-color: #FFFFFF; } 
             .container { max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
             
+            /* Header */
             .fc-header-toolbar {
                 display: flex !important;
                 flex-wrap: nowrap !important;
                 align-items: center !important;
                 justify-content: space-between !important;
-                padding: 8px 5px !important;
+                padding: 5px !important;
                 margin-bottom: 5px !important;
                 gap: 2px !important;
             }
-            
-            .fc-toolbar-chunk { display: flex; align-items: center; gap: 2px; }
-            
-            .fc-toolbar-title { 
-                font-size: 1rem !important; 
-                margin: 0 5px !important;
-                white-space: nowrap;
-            }
+            .fc-toolbar-chunk { display: flex; align-items: center; gap: 1px; }
+            .fc-toolbar-title { font-size: 1rem !important; margin: 0 3px !important; white-space: nowrap; }
             
             .fc-button { 
-                padding: 2px 6px !important; 
+                padding: 0px 5px !important; 
                 font-size: 0.75rem !important; 
-                height: 28px !important;
-                line-height: 1 !important;
+                height: 24px !important;
+                line-height: 24px !important;
             }
 
-            .d-flex.justify-content-between.mb-4 {
+            #stickyHeader {
                 padding: 8px 15px;
                 background-color: #fff;
                 position: sticky;
@@ -156,28 +228,35 @@
             }
             h2 { font-size: 1.1rem; margin: 0; border: none; padding: 0; }
             
-            #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 20px !important; }
+            #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 10px !important; }
             
-            .fc-daygrid-day-frame { min-height: 60px !important; } 
+            /* 手機版格子：同樣預留空間 */
+            .fc-daygrid-day-frame { 
+                overflow: hidden; 
+                position: relative;
+                padding-bottom: 24px !important; 
+            } 
+            
+            /* 手機版連結高度微調 */
+            .fc-daygrid-more-link {
+                height: 24px !important;
+                line-height: 24px !important;
+            }
+
             .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
             .fc-daygrid-day-number { font-size: 0.7rem !important; color: #999; padding: 1px 2px !important; }
             
-            /* 手機版事件膠囊：極度緊湊 */
             .fc-event {
                 font-size: 0.65rem !important; 
                 padding: 0px 2px !important;   
-                border-radius: 3px !important;
+                border-radius: 2px !important;
                 margin: 1px 0 !important;
                 line-height: 1.1 !important;
-                min-height: auto !important;
             }
-            .fc-event-main { padding: 0 !important; }
             
-            /* [v1.6] More Link 手機版更小 */
-            .fc-more-link { font-size: 0.7rem; }
+            .fc-more-link { font-size: 0.7rem; margin-top: 0; }
 
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
-            
             .dashboard-btn {
                 border: none !important; 
                 border-radius: 4px !important;
@@ -189,20 +268,19 @@
             .btn-act { width: 100% !important; display: block; text-align: left; }
             .btn-act div { display: flex; justify-content: space-between; align-items: center; }
             
-            /* FAB 新增按鈕 (維持右下) */
             .btn-custom-add {
                 position: fixed; bottom: 30px; right: 20px; width: 50px; height: 50px;
                 border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;
                 z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 0 !important;
                 background-color: var(--primary-action);
+                color: #333 !important; 
             }
             .btn-custom-add i { font-size: 1.4rem !important; margin: 0 !important; display: block !important; }
             
-            /* [v1.6] 回報按鈕調整：固定在左下角 (Left Aligned in Flow) */
             .report-bug-container { 
-                justify-content: flex-start !important; /* 靠左 */
-                padding-left: 20px; /* 左側留白 */
-                padding-bottom: 40px; /* 底部空間 */
+                justify-content: flex-start !important; 
+                padding-left: 20px; 
+                padding-bottom: 40px; 
                 margin-top: 5px; 
             }
             .btn-report-bug { background-color: #f0f0f0; color: #999; font-size: 0.75rem; padding: 4px 12px; box-shadow: none; border: 1px solid #ddd; }
@@ -233,15 +311,7 @@
 
         .btn-report-bug { background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        
-        /* [v1.6] 回報按鈕容器：預設靠左，確保不與 FAB 重疊 */
-        .report-bug-container { 
-            display: flex; 
-            justify-content: flex-start; /* 靠左 */
-            margin-top: 20px; 
-            padding-bottom: 20px; 
-            width: 100%; 
-        }
+        .report-bug-container { display: flex; justify-content: flex-start; margin-top: 20px; padding-bottom: 20px; width: 100%; }
 
         .dashboard-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; height: 100%; box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); }
         .card-history { background-color: #FAFAFA; border-top: 5px solid #AED581; }
@@ -288,7 +358,7 @@
 <body>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div id="stickyHeader" class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2><i class="fa-solid fa-calendar-days me-2" style="color: #A1887F;"></i>泰國佛堂_共用行事曆</h2>
         <button class="btn btn-custom-add" onclick="openAddModal()">
             <i class="fa-solid fa-plus me-1"></i> 新增資料
@@ -412,7 +482,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v1.6
+// 🏗️ 系統架構 (System Architecture) - v2.7
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -492,7 +562,7 @@ class APIService {
     }
 }
 
-// 4. CaptchaSystem: 驗證碼系統 (Fixed Dynamic Element Binding)
+// 4. CaptchaSystem: 驗證碼系統
 class CaptchaSystem {
     constructor(displayId, inputId) {
         this.displayId = displayId;
@@ -501,15 +571,11 @@ class CaptchaSystem {
     }
 
     generate() {
-        // Re-fetch elements every time to handle dynamic modals
         const displayEl = document.getElementById(this.displayId);
         const inputEl = document.getElementById(this.inputId);
-        
         this.currentCode = Math.floor(1000 + Math.random() * 9000).toString();
-        
         if (displayEl) displayEl.innerText = this.currentCode;
         if (inputEl) inputEl.value = '';
-        
         return this.currentCode;
     }
 
@@ -1025,6 +1091,11 @@ class App {
         document.getElementById('startTime').innerHTML = opts;
         document.getElementById('endTime').innerHTML = opts;
         this.initCalendar();
+        
+        // [v1.9] Listen to resize to adjust mobile/desktop height logic
+        window.addEventListener('resize', () => {
+            this.adjustCalendarLayout();
+        });
     }
 
     generateTimeOptions() {
@@ -1053,12 +1124,15 @@ class App {
                 }
             },
             eventDisplay: 'block',
-            contentHeight: 'auto', 
-            dayMaxEvents: true, /* [v1.6] Enable max events to show "more link" */
+            // [v1.9] Height logic moved to adjustCalendarLayout
+            height: 'auto',
+            dayMaxEvents: true, 
             
-            // [v1.6] More Link as Triangle
+            // [v2.1] Custom More Link Text
             moreLinkContent: function(args) {
-                return { html: '<i class="fa-solid fa-caret-down"></i>' };
+                const isDesktop = window.innerWidth >= 768;
+                const text = isDesktop ? `+${args.num} more ` : `+${args.num} `;
+                return { html: `${text}<i class="fa-solid fa-caret-down"></i>` };
             },
             
             fixedWeekCount: false,      
@@ -1073,7 +1147,36 @@ class App {
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
         });
         this.calendar.render();
+        
+        // [v1.9] Initial adjustment
+        this.adjustCalendarLayout();
+        
         this.ui.jumpToDate = (d) => this.jumpToDate(d);
+    }
+    
+    // [v1.9] Logic for switching between Desktop (Fixed Limit) & Mobile (Auto Height)
+    adjustCalendarLayout() {
+        if (!this.calendar) return;
+        
+        const isDesktop = window.innerWidth >= 768;
+        
+        if (isDesktop) {
+            // Desktop: 
+            // 1. Remove forced height (let it be 'auto' so CSS min-height works)
+            // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
+            this.calendar.setOption('height', 'auto');
+            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
+        } else {
+            // Mobile: 
+            // 1. Calculate available height to fill screen
+            // 2. Use dayMaxEvents: true (Auto calc based on row height)
+            const headerEl = document.getElementById('stickyHeader');
+            const headerHeight = headerEl ? headerEl.offsetHeight : 60;
+            const availableHeight = window.innerHeight - headerHeight - 20; 
+            
+            this.calendar.setOption('height', availableHeight);
+            this.calendar.setOption('dayMaxEvents', true);
+        }
     }
 
     fetchEventsWrapper(info, successCallback, failureCallback) {
