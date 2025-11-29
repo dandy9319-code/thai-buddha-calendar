@@ -2,7 +2,8 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 【修正】強制設定寬度為 1200px，讓手機顯示電腦版面 (可縮放) -->
+    <meta name="viewport" content="width=1200">
     <title>泰國佛堂_共用行事曆</title>
     
     <!-- 核心套件 -->
@@ -16,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - RWD 適配版
+           🍵 溫潤日系風格 (Warm & Cozy Style) - 最終版
            ========================================= */
         
         :root {
@@ -25,8 +26,8 @@
             --text-primary: #5D4037;   
             --text-secondary: #8D6E63; 
             --border-color: #EFEBE9;   
-            --accent-color: #8D6E63;   
-            --primary-action: #a3daff; 
+            --accent-color: #8D6E63;   /* 暖褐色 (按鈕主色) */
+            --primary-action: #4FC3F7; /* 【維持】清透藍 (新增按鈕) */
             --border-radius: 10px;     
         }
 
@@ -34,6 +35,8 @@
             background-color: var(--bg-color);
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
             color: var(--text-primary);
+            /* 確保在寬螢幕設定下，背景能滿版 */
+            min-width: 1200px;
         }
         
         .container { max-width: 1200px; margin-top: 40px; margin-bottom: 80px; }
@@ -56,32 +59,13 @@
             border: 1px solid var(--border-color);
         }
         
-        /* --- 【關鍵修正】RWD 響應式高度控制 --- */
-        /* 電腦版 (螢幕 > 768px)：維持固定高度 130px，美觀整齊 */
-        @media (min-width: 768px) {
-            .fc-daygrid-day-frame {
-                height: 130px !important; 
-                min-height: 130px !important;
-                max-height: 130px !important;
-                overflow: hidden;
-            }
-        }
-
-        /* 手機版 (螢幕 <= 768px)：解除高度限制，改為 auto，避免變形 */
-        @media (max-width: 767.98px) {
-            .container { padding-left: 10px; padding-right: 10px; margin-top: 20px;}
-            #calendar { padding: 10px; border-radius: 10px; }
-            
-            /* 手機版月曆格不強制高度，讓內容撐開 */
-            .fc-daygrid-day-frame {
-                height: auto !important; 
-                min-height: 80px !important; /* 至少有一點高度 */
-            }
-            
-            /* 手機版字體調小 */
-            .fc-toolbar-title { font-size: 1.2rem !important; }
-            .fc-header-toolbar { flex-direction: column; gap: 10px; }
-            .fc-toolbar-chunk { justify-content: center; }
+        /* 固定高度 (5行) */
+        .fc-daygrid-day-frame {
+            height: 130px !important; 
+            min-height: 130px !important;
+            max-height: 130px !important;
+            overflow: hidden;
+            position: relative; 
         }
 
         /* 壓縮日期欄位 */
@@ -742,6 +726,7 @@ const UIManager = {
         }
     },
     
+    // --- 多連結管理 ---
     addLinkToLocal: function() {
         if (this.currentLinks.length >= 3) {
             Swal.fire('數量限制', '最多只能新增 3 個連結', 'warning');
@@ -856,7 +841,9 @@ const UIManager = {
         document.getElementById('startTime').value = t; document.getElementById('endTime').value = t;
         
         this.generateCaptcha(); 
-        this.toggleFormFields(); 
+        // 重置為空，確保 toggleFormFields 會去抓 localStorage
+        document.getElementById('selectedColor').value = ''; 
+        this.toggleFormFields();
         new bootstrap.Modal(document.getElementById('eventModal')).show();
     },
 
@@ -869,7 +856,13 @@ const UIManager = {
         document.getElementById('eventType').value = type;
         document.getElementById('eventTitle').value = e.title;
 
+        // 【修正】編輯時，強制覆蓋為該事件的顏色
         const bgColor = e.backgroundColor;
+        
+        // 切換狀態 (會觸發預設選色)
+        this.toggleFormFields();
+
+        // 如果是人員，手動選回正確顏色 (必須在 toggle 之後)
         if (type !== 'activity' && bgColor) {
              this.selectSwatchByColor(bgColor);
         }
@@ -878,7 +871,6 @@ const UIManager = {
         const props = originalEvent.extendedProps || {};
 
         const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
-        
         this.isEditingPastActivity = false;
         if (originalEvent.start && type === 'activity') {
             // 修正結束日期判斷 (FullCalendar end +1，存檔時已+1，這裡顯示時要判斷準確)
@@ -903,8 +895,7 @@ const UIManager = {
         document.getElementById('linkUrl').value = '';
         document.getElementById('urlSafetyFeedback').innerHTML = '';
 
-        this.toggleFormFields();
-
+        // 重新檢查是否顯示連結區 (因為上面 toggle 已經跑過一次了，這裡要再確認一次編輯狀態)
         if (this.isEditingPastActivity && type === 'activity') {
             document.getElementById('completedSection').style.display = 'block';
             this.renderLinkList();
