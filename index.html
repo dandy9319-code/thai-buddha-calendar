@@ -1,4 +1,4 @@
-<!-- v2.10 | Fix Date Sync Logic (Auto-set End Date) | 2025-09-30 -->
+<!-- v2.11 | Ultra Compact Mobile View | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.10
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.11
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -135,7 +135,7 @@
             border-radius: 4px;
         }
 
-        /* 事件膠囊 */
+        /* 事件膠囊 (電腦版預設) */
         .fc-event { 
             cursor: pointer; border: none !important; 
             box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
@@ -170,7 +170,7 @@
         .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
         /* =========================================
-           📱 手機版 RWD 細節
+           📱 手機版 RWD 細節 - [v2.11] 極致緊湊化
            ========================================= */
         @media (max-width: 767.98px) {
             body { background-color: #FFFFFF; } 
@@ -209,18 +209,46 @@
             
             #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 10px !important; }
             
-            .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
-            .fc-daygrid-day-number { font-size: 0.7rem !important; color: #999; padding: 1px 2px !important; }
-            
-            .fc-event {
-                font-size: 0.65rem !important; 
-                padding: 0px 2px !important;   
-                border-radius: 2px !important;
-                margin: 1px 0 !important;
-                line-height: 1.1 !important;
+            /* [v2.11] 日期欄位高度壓縮 */
+            .fc-daygrid-day-top { 
+                flex-direction: row; 
+                padding: 0px 2px !important; 
+                height: 16px !important; /* 壓到極限 */
+                min-height: 16px !important; 
+                margin-bottom: 0px !important;
             }
             
-            .fc-more-link { font-size: 0.7rem; margin-top: 0; }
+            /* [v2.11] 日期數字縮小 */
+            .fc-daygrid-day-number { 
+                font-size: 0.65rem !important; 
+                color: #999; 
+                padding: 0 !important; 
+                line-height: 16px !important;
+                margin: 0 !important;
+            }
+            
+            .fc-col-header-cell { 
+                padding: 2px 0; 
+                font-size: 0.7rem !important; 
+            }
+
+            /* [v2.11] 手機版事件膠囊：極致緊湊 */
+            .fc-event {
+                font-size: 0.6rem !important;  /* 字體再縮小 */
+                padding: 0px 1px !important;   
+                border-radius: 2px !important;
+                margin: 0px 0 1px 0 !important; /* 幾乎無間距 */
+                line-height: 1.0 !important;    /* 行距貼齊 */
+            }
+            
+            /* [v2.11] 活動列表容器無間隙 */
+            .fc-daygrid-day-events {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+                gap: 0 !important;
+            }
+            
+            .fc-more-link { font-size: 0.65rem; margin-top: 0; line-height: 1; }
 
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
             .dashboard-btn {
@@ -449,7 +477,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.10
+// 🏗️ 系統架構 (System Architecture) - v2.11
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -1132,7 +1160,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
+            this.calendar.setOption('dayMaxEvents', true); // [v2.6] Revert to true to fill space
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
