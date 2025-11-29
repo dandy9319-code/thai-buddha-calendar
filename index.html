@@ -1,4 +1,4 @@
-<!-- v2.7 | Fix Missing More-Link Bug on Desktop | 2025-09-30 -->
+<!-- v2.8 | Fix Overlap & Mobile Empty Cells Bug | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.7
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.8
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -58,7 +58,7 @@
         }
 
         /* --------------------------------------
-           按鈕樣式：Ghost Button (預設透明，選取實心)
+           按鈕樣式：Ghost Button
            -------------------------------------- */
         .fc-button-primary {
             background-color: transparent !important; 
@@ -76,7 +76,6 @@
             margin: 0 1px !important;
         }
         
-        /* 選取狀態 (Active) */
         .fc-button-primary.fc-button-active, 
         .fc-button-primary:active {
             background-color: var(--accent-color) !important;
@@ -97,63 +96,61 @@
         
         .fc-button-primary:focus { box-shadow: none !important; }
         
-        .fc-icon { 
-            font-size: 0.9rem !important; 
-            vertical-align: middle;
-        }
-
-        .fc-toolbar-title { 
-            font-size: 1.4rem !important; 
-            color: var(--text-primary); 
-            font-weight: 700; 
-        }
+        .fc-icon { font-size: 0.9rem !important; vertical-align: middle; }
+        .fc-toolbar-title { font-size: 1.4rem !important; color: var(--text-primary); font-weight: 700; }
 
         /* --------------------------------------
-           [v2.7] 事件與格子樣式 - 預留底部空間 (Padding Reservation)
+           [v2.8] 事件與格子樣式修正
            -------------------------------------- */
         
-        /* 1. 電腦版設定 */
-        @media (min-width: 768px) {
-            .fc-daygrid-day-frame {
-                height: 120px !important; /* 固定高度 */
-                min-height: 120px !important;
-                max-height: 120px !important;
-                overflow: hidden; 
-                position: relative; 
-                /* [關鍵] 預留底部 24px 給連結，這會讓 FullCalendar 提早截斷內容 */
-                padding-bottom: 24px !important; 
-            }
-        }
-
-        /* 2. 手機版設定 */
-        @media (max-width: 767.98px) {
-            .fc-daygrid-day-frame { 
-                /* 高度由 JS 動態控制 */
-                overflow: hidden; 
-                position: relative;
-                /* [關鍵] 手機版也預留同樣空間 */
-                padding-bottom: 24px !important; 
-            } 
-        }
-
-        /* [v2.7] 連結絕對置底，填滿預留空間 */
+        /* [v2.8] 通用 More Link 樣式 (絕對定位底層) */
         .fc-daygrid-more-link {
             position: absolute !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            
-            height: 24px !important;      /* 剛好填滿 padding-bottom */
-            line-height: 24px !important; /* 垂直置中 */
-            
-            z-index: 100 !important;
-            background-color: var(--card-bg) !important; /* 實心背景，防止穿透 */
-            
+            z-index: 10 !important; /* 確保在最上層 */
+            background-color: var(--card-bg) !important; /* 實心背景 */
             margin: 0 !important;
             display: block !important;
             width: 100%;
             text-align: center;
-            border-top: 1px solid rgba(0,0,0,0.03); /* 微微的分隔線增加質感 */
+            border-top: 1px solid rgba(0,0,0,0.03);
+        }
+
+        /* 1. 電腦版設定 */
+        @media (min-width: 768px) {
+            .fc-daygrid-day-frame {
+                height: 120px !important; 
+                min-height: 120px !important;
+                max-height: 120px !important;
+                overflow: hidden; 
+                position: relative; 
+                /* 預留空間給底部連結 */
+                padding-bottom: 22px !important; 
+            }
+            
+            /* 電腦版連結高度 */
+            .fc-daygrid-more-link {
+                height: 22px !important;
+                line-height: 22px !important;
+            }
+        }
+
+        /* 2. 手機版設定 (< 768px) */
+        @media (max-width: 767.98px) {
+            .fc-daygrid-day-frame { 
+                overflow: hidden; 
+                position: relative;
+                /* [v2.8] 縮小預留空間，避免吃掉太多活動顯示空間 */
+                padding-bottom: 18px !important; 
+            } 
+            
+            /* [v2.8] 手機版連結更小更緊湊 */
+            .fc-daygrid-more-link {
+                height: 18px !important;
+                line-height: 18px !important;
+            }
         }
 
         /* 事件膠囊 */
@@ -191,7 +188,7 @@
         .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
         /* =========================================
-           📱 手機版適配 (< 768px)
+           📱 手機版 RWD 細節
            ========================================= */
         @media (max-width: 767.98px) {
             body { background-color: #FFFFFF; } 
@@ -230,19 +227,6 @@
             
             #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 10px !important; }
             
-            /* 手機版格子：同樣預留空間 */
-            .fc-daygrid-day-frame { 
-                overflow: hidden; 
-                position: relative;
-                padding-bottom: 24px !important; 
-            } 
-            
-            /* 手機版連結高度微調 */
-            .fc-daygrid-more-link {
-                height: 24px !important;
-                line-height: 24px !important;
-            }
-
             .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
             .fc-daygrid-day-number { font-size: 0.7rem !important; color: #999; padding: 1px 2px !important; }
             
@@ -254,6 +238,7 @@
                 line-height: 1.1 !important;
             }
             
+            /* More link text smaller on mobile */
             .fc-more-link { font-size: 0.7rem; margin-top: 0; }
 
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
@@ -268,6 +253,7 @@
             .btn-act { width: 100% !important; display: block; text-align: left; }
             .btn-act div { display: flex; justify-content: space-between; align-items: center; }
             
+            /* FAB */
             .btn-custom-add {
                 position: fixed; bottom: 30px; right: 20px; width: 50px; height: 50px;
                 border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -482,7 +468,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.7
+// 🏗️ 系統架構 (System Architecture) - v2.8
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -1165,7 +1151,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
+            this.calendar.setOption('dayMaxEvents', 3); // [v2.8] Limit to 3 to ensure space for footer
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
