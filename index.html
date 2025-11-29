@@ -1,4 +1,4 @@
-<!-- v2.13 | Remove Link Underlines (Fix) | 2025-09-30 -->
+<!-- v2.15 | Update Activity Color to Pink (#fcd2f9 / #fa436b) | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.13
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.15
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -65,14 +65,12 @@
             color: inherit; /* 繼承原本設定的顏色 */
         }
         
-        /* 針對日期數字與週標題特別加強 */
         .fc-daygrid-day-number,
         .fc-col-header-cell-cushion {
             text-decoration: none !important;
             color: var(--text-secondary) !important;
         }
         
-        /* Hover 狀態也移除底線 */
         .fc-daygrid-day-number:hover,
         .fc-col-header-cell-cushion:hover {
             text-decoration: none !important;
@@ -168,6 +166,17 @@
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             display: block !important;
+        }
+
+        /* [v2.15] Activity Color Class Updated */
+        .event-type-activity { 
+            background-color: #fcd2f9; /* User Requested Pink */
+            border-left: 4px solid #fa436b !important; /* User Requested Dark Pink */
+            color: #5D4037 !important; 
+            font-weight: bold; 
+            width: 100% !important; 
+            display: block !important; 
+            margin-bottom: 2px !important; 
         }
 
         /* More Link 文字樣式 */
@@ -311,7 +320,7 @@
         .highlight-target-day { animation: flash-highlight 2.5s ease-out; position: relative; z-index: 10; }
         
         .person-pill { display: inline-block !important; width: auto !important; margin-right: 4px !important; white-space: nowrap; font-weight: 500; color: #5D4037 !important; background-color: var(--event-color, #eee); }
-        .event-type-activity { background-color: #F8BBD0; border-left: 4px solid #EC407A !important; color: #5D4037 !important; font-weight: bold; width: 100% !important; display: block !important; margin-bottom: 2px !important; }
+        
         .hide-time-text .fc-event-time { display: none !important; }
         .fc-daygrid-day-events { display: flex !important; flex-wrap: wrap !important; align-content: flex-start !important; gap: 1px !important; padding: 0 2px !important; margin-top: 0 !important; }
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
@@ -493,13 +502,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.12
+// 🏗️ 系統架構 (System Architecture) - v2.15
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    static get COLOR_ACTIVITY() { return '#F48FB1'; }
+    // [v2.15] Updated Activity Color to Pink (#fcd2f9 / #fa436b)
+    static get COLOR_ACTIVITY() { return '#fcd2f9'; } 
     // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() { 
         return [
@@ -1190,7 +1200,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
+            this.calendar.setOption('dayMaxEvents', true); // [v2.6] Revert to true to fill space
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
