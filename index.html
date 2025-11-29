@@ -1,4 +1,4 @@
-<!-- v2.11 | Ultra Compact Mobile View | 2025-09-30 -->
+<!-- v2.13 | Remove Link Underlines (Fix) | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.11
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.13
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -55,6 +55,28 @@
             border-radius: var(--border-radius);
             box-shadow: 0 4px 15px rgba(141, 110, 99, 0.08);
             border: 1px solid var(--border-color);
+        }
+
+        /* --------------------------------------
+           [v2.13 Fix] 全域移除行事曆連結底線
+           -------------------------------------- */
+        #calendar a {
+            text-decoration: none !important;
+            color: inherit; /* 繼承原本設定的顏色 */
+        }
+        
+        /* 針對日期數字與週標題特別加強 */
+        .fc-daygrid-day-number,
+        .fc-col-header-cell-cushion {
+            text-decoration: none !important;
+            color: var(--text-secondary) !important;
+        }
+        
+        /* Hover 狀態也移除底線 */
+        .fc-daygrid-day-number:hover,
+        .fc-col-header-cell-cushion:hover {
+            text-decoration: none !important;
+            color: var(--text-primary) !important;
         }
 
         /* --------------------------------------
@@ -100,7 +122,7 @@
         .fc-toolbar-title { font-size: 1.4rem !important; color: var(--text-primary); font-weight: 700; }
 
         /* --------------------------------------
-           事件與格子樣式 (v2.9 Logic)
+           事件與格子樣式
            -------------------------------------- */
         
         /* 1. 電腦版設定 */
@@ -112,18 +134,24 @@
                 overflow: hidden; 
                 position: relative; 
             }
+            
+            .fc-event { 
+                cursor: pointer; border: none !important; 
+                box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
+                font-size: 0.8rem; 
+                margin-bottom: 1px !important; 
+                margin-top: 0 !important;
+                border-radius: 3px !important; 
+                padding: 0 4px !important;   
+                line-height: 1.2 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                display: block !important;
+            }
         }
 
-        /* 2. 手機版設定 */
-        @media (max-width: 767.98px) {
-            .fc-daygrid-day-frame { 
-                /* 高度由 JS 動態控制 */
-                overflow: hidden; 
-                position: relative;
-            } 
-        }
-
-        /* 自然流排版，接在內容後面 */
+        /* 自然流排版 */
         .fc-daygrid-more-link {
             position: relative !important; 
             display: block !important;
@@ -135,21 +163,6 @@
             border-radius: 4px;
         }
 
-        /* 事件膠囊 (電腦版預設) */
-        .fc-event { 
-            cursor: pointer; border: none !important; 
-            box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
-            font-size: 0.8rem; 
-            margin-bottom: 1px !important; 
-            margin-top: 0 !important;
-            border-radius: 3px !important; 
-            padding: 0 4px !important;   
-            line-height: 1.2 !important;
-            white-space: nowrap !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            display: block !important;
-        }
         .fc-event-main {
             white-space: nowrap !important;
             overflow: hidden !important;
@@ -170,7 +183,7 @@
         .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
         /* =========================================
-           📱 手機版 RWD 細節 - [v2.11] 極致緊湊化
+           📱 手機版 RWD 細節
            ========================================= */
         @media (max-width: 767.98px) {
             body { background-color: #FFFFFF; } 
@@ -209,47 +222,54 @@
             
             #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 10px !important; }
             
-            /* [v2.11] 日期欄位高度壓縮 */
+            /* 格子高度由 JS 控制，但要隱藏溢出 */
+            .fc-daygrid-day-frame { 
+                overflow: hidden; 
+                position: relative;
+            } 
+            
+            /* 日期欄位高度壓縮 */
             .fc-daygrid-day-top { 
                 flex-direction: row; 
                 padding: 0px 2px !important; 
-                height: 16px !important; /* 壓到極限 */
-                min-height: 16px !important; 
-                margin-bottom: 0px !important;
+                margin-bottom: 0 !important;
+                height: 18px !important; 
+                min-height: 18px !important;
             }
-            
-            /* [v2.11] 日期數字縮小 */
             .fc-daygrid-day-number { 
-                font-size: 0.65rem !important; 
+                font-size: 0.7rem !important; 
                 color: #999; 
                 padding: 0 !important; 
-                line-height: 16px !important;
+                line-height: 18px !important;
                 margin: 0 !important;
             }
-            
-            .fc-col-header-cell { 
-                padding: 2px 0; 
-                font-size: 0.7rem !important; 
-            }
+            .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
 
-            /* [v2.11] 手機版事件膠囊：極致緊湊 */
-            .fc-event {
-                font-size: 0.6rem !important;  /* 字體再縮小 */
-                padding: 0px 1px !important;   
-                border-radius: 2px !important;
-                margin: 0px 0 1px 0 !important; /* 幾乎無間距 */
-                line-height: 1.0 !important;    /* 行距貼齊 */
-            }
-            
-            /* [v2.11] 活動列表容器無間隙 */
+            /* 手機版活動列表 */
             .fc-daygrid-day-events {
-                margin-top: 0 !important;
-                padding-top: 0 !important;
-                gap: 0 !important;
+                margin-top: 0 !important; 
+                margin-bottom: 0 !important;
             }
             
-            .fc-more-link { font-size: 0.65rem; margin-top: 0; line-height: 1; }
+            /* 手機版事件膠囊：極致緊湊 */
+            .fc-event {
+                cursor: pointer; border: none !important; 
+                box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
+                
+                font-size: 0.65rem !important; 
+                padding: 0px 2px !important;   
+                border-radius: 2px !important;
+                margin: 0px 0 1px 0 !important; 
+                line-height: 1.1 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                display: block !important;
+            }
+            
+            .fc-more-link { font-size: 0.7rem; margin-top: 0; }
 
+            /* Dashboard Styles */
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
             .dashboard-btn {
                 border: none !important; 
@@ -284,10 +304,6 @@
         /* --------------------------------------
            通用細節
            -------------------------------------- */
-        .fc-daygrid-day-top { flex-direction: row; padding: 1px 4px !important; height: 24px !important; min-height: 24px !important; }
-        a.fc-col-header-cell-cushion, a.fc-daygrid-day-number { text-decoration: none !important; color: var(--text-secondary) !important; cursor: pointer; }
-        a.fc-col-header-cell-cushion:hover, a.fc-daygrid-day-number:hover { text-decoration: none !important; color: var(--text-primary) !important; }
-
         @keyframes flash-highlight {
             0% { background-color: rgba(255, 235, 59, 0.8); box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.6); }
             100% { background-color: transparent; box-shadow: none; }
@@ -477,15 +493,29 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.11
+// 🏗️ 系統架構 (System Architecture) - v2.12
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
     static get COLOR_ACTIVITY() { return '#F48FB1'; }
+    // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() { 
-        return ['#AED581', '#81D4FA', '#9FA8DA', '#E6EE9C', '#FFCC80', '#B0BEC5', '#BCAAA4', '#80CBC4', '#CE93D8', '#FFF59D', '#90CAF9', '#CFD8DC'];
+        return [
+            '#DCEDC8', // Light Green
+            '#B3E5FC', // Light Blue
+            '#C5CAE9', // Indigo
+            '#F0F4C3', // Lime
+            '#FFE0B2', // Orange
+            '#E0E0E0', // Grey
+            '#D7CCC8', // Brown
+            '#B2DFDB', // Teal
+            '#E1BEE7', // Purple
+            '#FFF9C4', // Yellow
+            '#BBDEFB', // Blue
+            '#ECEFF1'  // Blue Grey
+        ];
     }
 }
 
@@ -1160,7 +1190,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', true); // [v2.6] Revert to true to fill space
+            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
