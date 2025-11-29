@@ -1,4 +1,4 @@
-<!-- v2.15 | Update Activity Color to Pink (#fcd2f9 / #fa436b) | 2025-09-30 -->
+<!-- v2.16 | Lighter Pink & Fix Mobile Border | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.15
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.16
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -168,10 +168,10 @@
             display: block !important;
         }
 
-        /* [v2.15] Activity Color Class Updated */
+        /* [v2.16] Activity Color Class Updated */
         .event-type-activity { 
-            background-color: #fcd2f9; /* User Requested Pink */
-            border-left: 4px solid #fa436b !important; /* User Requested Dark Pink */
+            background-color: #f7d0f5; /* Lighter Pink */
+            border-left: 4px solid #fa436b !important; /* Dark Pink Border */
             color: #5D4037 !important; 
             font-weight: bold; 
             width: 100% !important; 
@@ -274,6 +274,11 @@
                 overflow: hidden !important;
                 text-overflow: ellipsis !important;
                 display: block !important;
+            }
+
+            /* [v2.16 Fix] 手機版活動標籤強制顯示左側邊框 */
+            .fc-event.event-type-activity {
+                border-left: 4px solid #fa436b !important;
             }
             
             .fc-more-link { font-size: 0.7rem; margin-top: 0; }
@@ -502,14 +507,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.15
+// 🏗️ 系統架構 (System Architecture) - v2.16
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.15] Updated Activity Color to Pink (#fcd2f9 / #fa436b)
-    static get COLOR_ACTIVITY() { return '#fcd2f9'; } 
+    // [v2.16] Updated Activity Color to Lighter Pink (#f7d0f5 / #fa436b)
+    static get COLOR_ACTIVITY() { return '#f7d0f5'; } 
     // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() { 
         return [
