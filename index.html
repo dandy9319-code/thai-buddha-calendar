@@ -1,4 +1,4 @@
-<!-- v1.4 | Fix ReferenceError & Dynamic Captcha | 2025-09-30 -->
+<!-- v1.5 | UI Refinement: Compact & Modern | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.3 Mobile Optimized
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.5 Visual Polish
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -57,180 +57,174 @@
             border: 1px solid var(--border-color);
         }
 
+        /* --------------------------------------
+           1. 電腦版/通用 UI 優化 (質感提升)
+           -------------------------------------- */
+        /* 優化行事曆上方按鈕：縮小、去陰影、提升質感 */
+        .fc-button-primary {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            border-radius: 6px !important; /* 圓角稍微小一點，比較俐落 */
+            padding: 3px 10px !important;  /* 縮小內距 */
+            font-size: 0.9rem !important;
+            box-shadow: none !important;   /* 移除厚重陰影 */
+            font-weight: 500 !important;
+            transition: all 0.2s ease !important;
+        }
+        .fc-button-primary:hover {
+            background-color: #795548 !important;
+            transform: translateY(-1px);
+        }
+        .fc-button-primary:focus { box-shadow: none !important; }
+        .fc-icon { font-size: 1rem !important; } /* < > 箭頭縮小 */
+
+        /* 標題列優化 */
+        .fc-toolbar-title { 
+            font-size: 1.5rem !important; 
+            color: var(--text-primary); 
+            font-weight: 700; 
+        }
+
+        /* 事件通用樣式 */
+        .fc-event { 
+            cursor: pointer; border: none !important; 
+            box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
+            font-size: 0.8rem; 
+            margin-bottom: 1px !important; 
+            border-radius: 4px !important; 
+            padding: 1px 4px !important;    
+            line-height: 1.2 !important;    
+        }
+        
         /* =========================================
-           📱 手機版適配 (< 768px) - v1.3 極致優化
-           目標：類 Google Calendar APP 體驗 (滿版、精簡、FAB按鈕)
+           📱 手機版適配 (< 768px) - v1.5 極致緊湊版
            ========================================= */
         @media (max-width: 767.98px) {
-            /* 1. 滿版設定 & 背景純淨化 */
+            /* 基本滿版設定 */
             body { background-color: #FFFFFF; } 
+            .container { max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
             
-            .container { 
-                max-width: 100%; 
-                margin: 0; 
-                padding: 0; 
-                overflow-x: hidden;
+            /* 2. 行事曆上方 (Header) 一排呈現 */
+            .fc-header-toolbar {
+                display: flex !important;
+                flex-wrap: nowrap !important; /* 強制不換行 */
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 8px 5px !important;
+                margin-bottom: 5px !important;
+                gap: 2px !important;
             }
             
-            /* 標題列：改為置頂固定，增加空間利用率 */
-            .d-flex.justify-content-between {
-                padding: 10px 15px;
-                background-color: var(--bg-color);
+            .fc-toolbar-chunk {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+            }
+            
+            /* 標題縮小 */
+            .fc-toolbar-title { 
+                font-size: 1rem !important; /* 變小 */
+                margin: 0 5px !important;
+                white-space: nowrap;
+            }
+            
+            /* 按鈕極小化 */
+            .fc-button { 
+                padding: 2px 6px !important; 
+                font-size: 0.75rem !important; 
+                height: 28px !important;
+                line-height: 1 !important;
+            }
+
+            /* 標題列：置頂固定 */
+            .d-flex.justify-content-between.mb-4 {
+                padding: 8px 15px;
+                background-color: #fff;
                 position: sticky;
                 top: 0;
                 z-index: 100;
-                border-bottom: 1px solid #EFEBE9;
+                border-bottom: 1px solid #eee;
                 margin-bottom: 0 !important;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             }
+            h2 { font-size: 1.1rem; margin: 0; border: none; padding: 0; }
             
-            h2 { 
-                font-size: 1.2rem; 
-                margin: 0; 
-                border: none; 
-                padding: 0; 
-            }
+            /* 行事曆本體 */
+            #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 20px !important; }
             
-            /* 2. 行事曆本體：去框、去內距、滿版 */
-            #calendar { 
-                padding: 0; 
-                border: none; 
-                border-radius: 0; 
-                box-shadow: none;
-                margin-bottom: 20px !important;
-            }
+            /* 3. 格子與事件極致緊湊 */
+            .fc-daygrid-day-frame { min-height: 60px !important; } /* 格子更矮 */
+            .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
+            .fc-daygrid-day-number { font-size: 0.7rem !important; color: #999; padding: 1px 2px !important; }
             
-            /* 工具列 (上個月/下個月) */
-            .fc-header-toolbar {
-                padding: 8px 5px;
-                margin-bottom: 5px !important;
-            }
-            .fc-toolbar-title { font-size: 1.1rem !important; }
-            .fc-button { 
-                padding: 4px 10px !important; 
-                font-size: 0.8rem !important; 
-            }
-
-            /* 3. 格子與字體極小化 */
-            .fc-daygrid-day-frame {
-                min-height: 70px !important; 
-            }
-            .fc-col-header-cell {
-                padding: 5px 0;
-                font-size: 0.8rem; /* 星期幾的字縮小 */
-            }
-            .fc-daygrid-day-number {
-                font-size: 0.75rem !important; /* 日期數字縮小 */
-                color: #777;
-                padding: 2px 4px !important;
-            }
-            
-            /* 事件條：更緊湊 */
+            /* 事件膠囊：貼齊文字 */
             .fc-event {
-                font-size: 0.7rem !important; /* 約 11-12px */
-                padding: 1px 3px !important;
-                border-radius: 2px !important;
+                font-size: 0.65rem !important; /* 字體再縮小 */
+                padding: 0px 2px !important;   /* 幾乎無內距 */
+                border-radius: 3px !important;
                 margin: 1px 0 !important;
-                line-height: 1.2 !important;
+                line-height: 1.1 !important;
+                min-height: auto !important;
             }
+            .fc-event-main { padding: 0 !important; } /* 移除內部 padding */
             
-            /* 4. 「新增」按鈕優化：改為懸浮按鈕 (FAB) */
+            /* 4. 近期活動：滿版色塊、縮小 */
+            .dashboard-card {
+                border: none;
+                padding: 15px;
+                margin: 0;
+                border-radius: 0;
+                border-top: 1px solid #eee;
+            }
+            /* 修正按鈕樣式：去除白框，滿版色塊 */
+            .dashboard-btn {
+                border: none !important; /* 關鍵：去除邊框 */
+                border-radius: 4px !important;
+                padding: 4px 8px !important; /* 縮小色塊高度 */
+                margin-bottom: 4px !important;
+                font-size: 0.8rem !important; /* 字體縮小 */
+                box-shadow: none !important; /* 移除陰影，變平扁 */
+            }
+            .btn-act { 
+                width: 100% !important; 
+                display: block;
+                text-align: left;
+            }
+            /* 確保顏色滿版 */
+            .btn-act div { display: flex; justify-content: space-between; align-items: center; }
+            
+            /* FAB 新增按鈕 */
             .btn-custom-add {
-                position: fixed;
-                bottom: 30px;
-                right: 20px;
-                width: 56px;
-                height: 56px;
-                border-radius: 50%;
-                padding: 0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                font-size: 0 !important; /* 隱藏文字 */
+                position: fixed; bottom: 30px; right: 20px; width: 50px; height: 50px;
+                border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;
+                z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 0 !important;
                 background-color: var(--primary-action);
             }
-            /* 強制顯示 icon 並放大 */
-            .btn-custom-add i {
-                font-size: 1.5rem !important; 
-                margin: 0 !important;
-                display: block !important;
-            }
-            .btn-custom-add:hover { transform: scale(1.05); }
-
-            /* 5. 儀表板與回報按鈕調整 */
-            .dashboard-card {
-                margin: 0 10px 15px 10px; /* 卡片左右留一點邊距 */
-                border-radius: 8px;
-            }
+            .btn-custom-add i { font-size: 1.4rem !important; margin: 0 !important; display: block !important; }
             
-            /* 回報按鈕：避免被 FAB 擋住，改為置中並墊高 */
-            .report-bug-container {
-                justify-content: center;
-                padding-bottom: 90px; /* 預留 FAB 空間 */
-                margin-top: 10px;
-            }
-            .btn-report-bug {
-                background-color: rgba(144, 164, 174, 0.9);
-                font-size: 0.8rem;
-                padding: 5px 15px;
-            }
-            
-            /* Modal 滿版微調 */
-            .modal-dialog { margin: 10px; }
+            /* 回報按鈕調整 */
+            .report-bug-container { justify-content: center; padding-bottom: 80px; margin-top: 5px; }
+            .btn-report-bug { background-color: #f0f0f0; color: #999; font-size: 0.75rem; padding: 4px 12px; box-shadow: none; border: 1px solid #ddd; }
         }
 
-        /* 電腦版設定 (維持原樣) */
-        @media (min-width: 768px) {
-            .fc-daygrid-day-frame {
-                height: 130px !important; 
-                min-height: 130px !important;
-                max-height: 130px !important;
-                overflow: hidden;
-                position: relative; 
-            }
-            /* 電腦版回報按鈕位置 */
-            .report-bug-container { 
-                display: flex;
-                justify-content: flex-end;
-                margin-top: 20px;
-                padding-bottom: 20px;
-                width: 100%;
-            }
-        }
-
-        /* 通用樣式 (日期連結去底線) */
+        /* --------------------------------------
+           通用細節
+           -------------------------------------- */
         .fc-daygrid-day-top { flex-direction: row; padding: 1px 4px !important; height: 24px !important; min-height: 24px !important; }
-        .fc-daygrid-day-number { font-size: 0.9rem; line-height: 1; margin: 0 !important; }
         a.fc-col-header-cell-cushion, a.fc-daygrid-day-number { text-decoration: none !important; color: var(--text-secondary) !important; cursor: pointer; }
         a.fc-col-header-cell-cushion:hover, a.fc-daygrid-day-number:hover { text-decoration: none !important; color: var(--text-primary) !important; }
 
-        /* Highlight Animation */
         @keyframes flash-highlight {
             0% { background-color: rgba(255, 235, 59, 0.8); box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.6); }
             100% { background-color: transparent; box-shadow: none; }
         }
         .highlight-target-day { animation: flash-highlight 2.5s ease-out; position: relative; z-index: 10; }
         
-        /* Event Styles */
-        .fc-event { cursor: pointer; border: none !important; box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); font-size: 0.8rem; margin-bottom: 1px !important; border-radius: 4px !important; padding: 1px 6px !important; line-height: 1.3 !important; }
-        .fc-event:hover { transform: translateY(-1px); filter: brightness(0.95); z-index: 5; }
         .person-pill { display: inline-block !important; width: auto !important; margin-right: 4px !important; white-space: nowrap; font-weight: 500; color: #5D4037 !important; background-color: var(--event-color, #eee); }
         .event-type-activity { background-color: #F8BBD0; border-left: 4px solid #EC407A !important; color: #5D4037 !important; font-weight: bold; width: 100% !important; display: block !important; margin-bottom: 2px !important; }
         .hide-time-text .fc-event-time { display: none !important; }
         .fc-daygrid-day-events { display: flex !important; flex-wrap: wrap !important; align-content: flex-start !important; gap: 1px !important; padding: 0 2px !important; margin-top: 0 !important; }
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
         .fc-daygrid-event-harness:has(.event-type-activity) { width: 100% !important; flex-basis: 100% !important; }
-
-        /* UI Components */
-        .fc-col-header-cell { background-color: #FFF8E1; padding: 8px 0; border-bottom: 2px solid #FFE0B2; color: var(--text-primary); }
-        
-        /* Button Styles */
-        .fc-button-primary { background-color: var(--accent-color) !important; border-color: var(--accent-color) !important; color: #FFFFFF !important; border-radius: 8px !important; font-weight: 500 !important; padding: 5px 14px !important; box-shadow: 0 2px 4px rgba(141, 110, 99, 0.2) !important; transition: all 0.2s ease !important; opacity: 0.9; }
-        .fc-button-primary:hover { background-color: #795548 !important; border-color: #795548 !important; transform: translateY(-1px); opacity: 1; }
-        .fc-button-primary:not(:disabled).fc-button-active { background-color: #5D4037 !important; border-color: #5D4037 !important; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important; }
-        .fc-button:focus { box-shadow: none !important; }
 
         /* Custom Add Button (Desktop Default) */
         .btn-custom-add { background-color: var(--primary-action); color: #333; border-radius: var(--border-radius); padding: 10px 30px; border: none; box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); transition: all 0.2s; font-weight: 600; letter-spacing: 1px; }
@@ -239,7 +233,8 @@
         /* Report Button (Default) */
         .btn-report-bug { background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        
+        .report-bug-container { display: flex; justify-content: flex-end; margin-top: 20px; padding-bottom: 20px; width: 100%; }
+
         /* Dashboard */
         .dashboard-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; height: 100%; box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); }
         .card-history { background-color: #FAFAFA; border-top: 5px solid #AED581; }
@@ -248,6 +243,8 @@
         .upcoming-list-container { max-height: 400px; overflow-y: auto; padding-right: 8px; }
         .upcoming-list-container::-webkit-scrollbar { width: 5px; }
         .upcoming-list-container::-webkit-scrollbar-thumb { background-color: #D7CCC8; border-radius: 10px; }
+        
+        /* Dashboard Buttons (Default) */
         .dashboard-btn { border: none; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(141, 110, 99, 0.1); transition: 0.2s; position: relative; border-radius: 6px; }
         .dashboard-btn:hover { transform: translateY(-1px); opacity: 0.95; }
         .btn-act { width: 100%; text-align: left; padding: 8px 15px; margin-bottom: 8px; }
@@ -410,7 +407,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v1.4
+// 🏗️ 系統架構 (System Architecture) - v1.5
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -694,7 +691,7 @@ class UIManager {
                 activities.forEach(e => {
                     const d = DateUtils.getLocalDateString(e.start);
                     const t = e.start.substring(11, 16);
-                    html += `<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')"><div class="d-flex justify-content-between"><strong>${e.title}</strong><small>${d} ${t}</small></div></button>`;
+                    html += `<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')"><div><strong>${e.title}</strong><small>${d} ${t}</small></div></button>`;
                 });
             }
             if (people.length > 0) {
