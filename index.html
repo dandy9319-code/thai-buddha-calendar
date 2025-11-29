@@ -16,7 +16,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - 最終版
+           🍵 溫潤日系風格 (Warm & Cozy Style) - RWD 適配版
            ========================================= */
         
         :root {
@@ -25,8 +25,8 @@
             --text-primary: #5D4037;   
             --text-secondary: #8D6E63; 
             --border-color: #EFEBE9;   
-            --accent-color: #8D6E63;   /* 暖褐色 (按鈕主色) */
-            --primary-action: #4FC3F7; /* 清透藍 (新增按鈕) */
+            --accent-color: #8D6E63;   
+            --primary-action: #a3daff; 
             --border-radius: 10px;     
         }
 
@@ -56,13 +56,32 @@
             border: 1px solid var(--border-color);
         }
         
-        /* 固定高度 (5行) */
-        .fc-daygrid-day-frame {
-            height: 130px !important; 
-            min-height: 130px !important;
-            max-height: 130px !important;
-            overflow: hidden;
-            position: relative; 
+        /* --- 【關鍵修正】RWD 響應式高度控制 --- */
+        /* 電腦版 (螢幕 > 768px)：維持固定高度 130px，美觀整齊 */
+        @media (min-width: 768px) {
+            .fc-daygrid-day-frame {
+                height: 130px !important; 
+                min-height: 130px !important;
+                max-height: 130px !important;
+                overflow: hidden;
+            }
+        }
+
+        /* 手機版 (螢幕 <= 768px)：解除高度限制，改為 auto，避免變形 */
+        @media (max-width: 767.98px) {
+            .container { padding-left: 10px; padding-right: 10px; margin-top: 20px;}
+            #calendar { padding: 10px; border-radius: 10px; }
+            
+            /* 手機版月曆格不強制高度，讓內容撐開 */
+            .fc-daygrid-day-frame {
+                height: auto !important; 
+                min-height: 80px !important; /* 至少有一點高度 */
+            }
+            
+            /* 手機版字體調小 */
+            .fc-toolbar-title { font-size: 1.2rem !important; }
+            .fc-header-toolbar { flex-direction: column; gap: 10px; }
+            .fc-toolbar-chunk { justify-content: center; }
         }
 
         /* 壓縮日期欄位 */
@@ -183,12 +202,12 @@
             border-radius: var(--border-radius); 
             padding: 10px 30px; 
             border: none; 
-            box-shadow: 0 3px 10px rgba(79, 195, 247, 0.4); 
+            box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); 
             transition: all 0.2s; 
             font-weight: 600;
             letter-spacing: 1px;
         }
-        .btn-custom-add:hover { background-color: #29B6F6; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(79, 195, 247, 0.6); color: #333;}
+        .btn-custom-add:hover { background-color: #81D4FA; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(163, 218, 255, 0.6); color: #333;}
 
         /* 回報按鈕 */
         .report-bug-container { position: fixed; bottom: 25px; right: 25px; z-index: 999; }
@@ -706,7 +725,6 @@ const UIManager = {
             colorSection.style.display = 'none';
             document.getElementById('selectedColor').value = ACTIVITY_COLOR;
             
-            // 【修正】邏輯判斷：只在 (1) 編輯模式 (2) 是活動 (3) 日期已過時 顯示連結區
             const completedSection = document.getElementById('completedSection');
             if (this.isEditingPastActivity) {
                 completedSection.style.display = 'block';
@@ -719,9 +737,7 @@ const UIManager = {
             const lastColor = localStorage.getItem('lastPersonColor');
             const defaultColor = (lastColor && PERSON_COLORS.includes(lastColor)) ? lastColor : PERSON_COLORS[0];
             
-            // 新增模式下，直接調用 selectSwatchByColor
             this.selectSwatchByColor(defaultColor);
-            
             document.getElementById('completedSection').style.display = 'none';
         }
     },
@@ -840,9 +856,7 @@ const UIManager = {
         document.getElementById('startTime').value = t; document.getElementById('endTime').value = t;
         
         this.generateCaptcha(); 
-        // 重置為空，確保 toggleFormFields 會去抓 localStorage
-        document.getElementById('selectedColor').value = ''; 
-        this.toggleFormFields();
+        this.toggleFormFields(); 
         new bootstrap.Modal(document.getElementById('eventModal')).show();
     },
 
@@ -855,28 +869,26 @@ const UIManager = {
         document.getElementById('eventType').value = type;
         document.getElementById('eventTitle').value = e.title;
 
+        const bgColor = e.backgroundColor;
+        if (type !== 'activity' && bgColor) {
+             this.selectSwatchByColor(bgColor);
+        }
+        
         const originalEvent = DataManager.allEventsData.find(evt => evt.id === e.id) || e; 
         const props = originalEvent.extendedProps || {};
 
         const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
         
-        // 【關鍵修正】精準判斷是否為「過去活動」
         this.isEditingPastActivity = false;
         if (originalEvent.start && type === 'activity') {
-            // 取得結束日 (若無則用開始日)
+            // 修正結束日期判斷 (FullCalendar end +1，存檔時已+1，這裡顯示時要判斷準確)
             const evtEndStr = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : DateEngine.getLocalDateString(originalEvent.start);
-            
-            // 因為 FullCalendar 的 end 是 exclusive (+1天)，所以我們比較時要小心
-            // 但我們存檔邏輯是 end = userEnd + 1
-            // 所以如果 evtEndStr <= todayStr，代表活動真的結束了
-            // 例如：活動 1號~1號，存 1~2。今天3號。evtEndStr(2) < 3。成立。
             
             if (evtEndStr <= todayStr) {
                 this.isEditingPastActivity = true;
             }
         }
 
-        // 解析連結 (JSON字串 -> 陣列)
         try {
             this.currentLinks = JSON.parse(props.linkUrl || '[]');
         } catch(err) {
@@ -891,13 +903,13 @@ const UIManager = {
         document.getElementById('linkUrl').value = '';
         document.getElementById('urlSafetyFeedback').innerHTML = '';
 
-        // 先設定狀態，再更新 UI
         this.toggleFormFields();
 
-        // 【修正】還原顏色 (必須在 toggle 之後)
-        const bgColor = originalEvent.backgroundColor;
-        if (type !== 'activity' && bgColor) {
-             this.selectSwatchByColor(bgColor);
+        if (this.isEditingPastActivity && type === 'activity') {
+            document.getElementById('completedSection').style.display = 'block';
+            this.renderLinkList();
+        } else {
+            document.getElementById('completedSection').style.display = 'none';
         }
 
         if(originalEvent.start) {
@@ -973,8 +985,15 @@ const UIManager = {
             preConfirm: () => {
                 const content = document.getElementById('reportText').value;
                 const inputCaptcha = document.getElementById('reportCaptchaInput').value;
-                if (!content) { Swal.showValidationMessage('請輸入回報內容'); return false; }
-                if (inputCaptcha !== this.currentReportCaptcha) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
+                
+                if (!content) {
+                    Swal.showValidationMessage('請輸入回報內容');
+                    return false;
+                }
+                if (inputCaptcha !== this.currentReportCaptcha) {
+                    Swal.showValidationMessage('驗證碼錯誤');
+                    return false;
+                }
                 return content;
             }
         }).then((result) => {
