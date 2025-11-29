@@ -1,4 +1,4 @@
-<!-- v1.5 | UI Refinement: Compact & Modern | 2025-09-30 -->
+<!-- v1.6 | Compact Rows & UI Tweaks | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.5 Visual Polish
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.6 Refined
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -60,14 +60,14 @@
         /* --------------------------------------
            1. 電腦版/通用 UI 優化 (質感提升)
            -------------------------------------- */
-        /* 優化行事曆上方按鈕：縮小、去陰影、提升質感 */
+        /* 優化行事曆上方按鈕 */
         .fc-button-primary {
             background-color: var(--accent-color) !important;
             border-color: var(--accent-color) !important;
-            border-radius: 6px !important; /* 圓角稍微小一點，比較俐落 */
-            padding: 3px 10px !important;  /* 縮小內距 */
+            border-radius: 6px !important; 
+            padding: 3px 10px !important;  
             font-size: 0.9rem !important;
-            box-shadow: none !important;   /* 移除厚重陰影 */
+            box-shadow: none !important;   
             font-weight: 500 !important;
             transition: all 0.2s ease !important;
         }
@@ -76,7 +76,7 @@
             transform: translateY(-1px);
         }
         .fc-button-primary:focus { box-shadow: none !important; }
-        .fc-icon { font-size: 1rem !important; } /* < > 箭頭縮小 */
+        .fc-icon { font-size: 1rem !important; } 
 
         /* 標題列優化 */
         .fc-toolbar-title { 
@@ -85,29 +85,44 @@
             font-weight: 700; 
         }
 
-        /* 事件通用樣式 */
+        /* --------------------------------------
+           [v1.6 新增] 事件通用樣式 - 極致緊湊化
+           -------------------------------------- */
         .fc-event { 
             cursor: pointer; border: none !important; 
             box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
             font-size: 0.8rem; 
+            /* 縮小上下邊距 */
             margin-bottom: 1px !important; 
+            margin-top: 0 !important;
             border-radius: 4px !important; 
-            padding: 1px 4px !important;    
-            line-height: 1.2 !important;    
+            padding: 0 4px !important; /* 縮小內距 */   
+            line-height: 1.15 !important; /* 縮小行高 */   
         }
         
+        /* 調整 More Link (展開更多) 的樣式 */
+        .fc-more-link {
+            color: var(--text-secondary) !important;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-decoration: none !important;
+            display: block;
+            text-align: center;
+            line-height: 1;
+            margin-top: 2px;
+        }
+        .fc-more-link:hover { background-color: rgba(0,0,0,0.05); border-radius: 4px; }
+
         /* =========================================
-           📱 手機版適配 (< 768px) - v1.5 極致緊湊版
+           📱 手機版適配 (< 768px)
            ========================================= */
         @media (max-width: 767.98px) {
-            /* 基本滿版設定 */
             body { background-color: #FFFFFF; } 
             .container { max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
             
-            /* 2. 行事曆上方 (Header) 一排呈現 */
             .fc-header-toolbar {
                 display: flex !important;
-                flex-wrap: nowrap !important; /* 強制不換行 */
+                flex-wrap: nowrap !important;
                 align-items: center !important;
                 justify-content: space-between !important;
                 padding: 8px 5px !important;
@@ -115,20 +130,14 @@
                 gap: 2px !important;
             }
             
-            .fc-toolbar-chunk {
-                display: flex;
-                align-items: center;
-                gap: 2px;
-            }
+            .fc-toolbar-chunk { display: flex; align-items: center; gap: 2px; }
             
-            /* 標題縮小 */
             .fc-toolbar-title { 
-                font-size: 1rem !important; /* 變小 */
+                font-size: 1rem !important; 
                 margin: 0 5px !important;
                 white-space: nowrap;
             }
             
-            /* 按鈕極小化 */
             .fc-button { 
                 padding: 2px 6px !important; 
                 font-size: 0.75rem !important; 
@@ -136,7 +145,6 @@
                 line-height: 1 !important;
             }
 
-            /* 標題列：置頂固定 */
             .d-flex.justify-content-between.mb-4 {
                 padding: 8px 15px;
                 background-color: #fff;
@@ -148,51 +156,40 @@
             }
             h2 { font-size: 1.1rem; margin: 0; border: none; padding: 0; }
             
-            /* 行事曆本體 */
             #calendar { padding: 0; border: none; border-radius: 0; box-shadow: none; margin-bottom: 20px !important; }
             
-            /* 3. 格子與事件極致緊湊 */
-            .fc-daygrid-day-frame { min-height: 60px !important; } /* 格子更矮 */
+            .fc-daygrid-day-frame { min-height: 60px !important; } 
             .fc-col-header-cell { padding: 2px 0; font-size: 0.75rem; }
             .fc-daygrid-day-number { font-size: 0.7rem !important; color: #999; padding: 1px 2px !important; }
             
-            /* 事件膠囊：貼齊文字 */
+            /* 手機版事件膠囊：極度緊湊 */
             .fc-event {
-                font-size: 0.65rem !important; /* 字體再縮小 */
-                padding: 0px 2px !important;   /* 幾乎無內距 */
+                font-size: 0.65rem !important; 
+                padding: 0px 2px !important;   
                 border-radius: 3px !important;
                 margin: 1px 0 !important;
                 line-height: 1.1 !important;
                 min-height: auto !important;
             }
-            .fc-event-main { padding: 0 !important; } /* 移除內部 padding */
+            .fc-event-main { padding: 0 !important; }
             
-            /* 4. 近期活動：滿版色塊、縮小 */
-            .dashboard-card {
-                border: none;
-                padding: 15px;
-                margin: 0;
-                border-radius: 0;
-                border-top: 1px solid #eee;
-            }
-            /* 修正按鈕樣式：去除白框，滿版色塊 */
+            /* [v1.6] More Link 手機版更小 */
+            .fc-more-link { font-size: 0.7rem; }
+
+            .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
+            
             .dashboard-btn {
-                border: none !important; /* 關鍵：去除邊框 */
+                border: none !important; 
                 border-radius: 4px !important;
-                padding: 4px 8px !important; /* 縮小色塊高度 */
+                padding: 4px 8px !important; 
                 margin-bottom: 4px !important;
-                font-size: 0.8rem !important; /* 字體縮小 */
-                box-shadow: none !important; /* 移除陰影，變平扁 */
+                font-size: 0.8rem !important; 
+                box-shadow: none !important; 
             }
-            .btn-act { 
-                width: 100% !important; 
-                display: block;
-                text-align: left;
-            }
-            /* 確保顏色滿版 */
+            .btn-act { width: 100% !important; display: block; text-align: left; }
             .btn-act div { display: flex; justify-content: space-between; align-items: center; }
             
-            /* FAB 新增按鈕 */
+            /* FAB 新增按鈕 (維持右下) */
             .btn-custom-add {
                 position: fixed; bottom: 30px; right: 20px; width: 50px; height: 50px;
                 border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -201,8 +198,13 @@
             }
             .btn-custom-add i { font-size: 1.4rem !important; margin: 0 !important; display: block !important; }
             
-            /* 回報按鈕調整 */
-            .report-bug-container { justify-content: center; padding-bottom: 80px; margin-top: 5px; }
+            /* [v1.6] 回報按鈕調整：固定在左下角 (Left Aligned in Flow) */
+            .report-bug-container { 
+                justify-content: flex-start !important; /* 靠左 */
+                padding-left: 20px; /* 左側留白 */
+                padding-bottom: 40px; /* 底部空間 */
+                margin-top: 5px; 
+            }
             .btn-report-bug { background-color: #f0f0f0; color: #999; font-size: 0.75rem; padding: 4px 12px; box-shadow: none; border: 1px solid #ddd; }
         }
 
@@ -226,16 +228,21 @@
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
         .fc-daygrid-event-harness:has(.event-type-activity) { width: 100% !important; flex-basis: 100% !important; }
 
-        /* Custom Add Button (Desktop Default) */
         .btn-custom-add { background-color: var(--primary-action); color: #333; border-radius: var(--border-radius); padding: 10px 30px; border: none; box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); transition: all 0.2s; font-weight: 600; letter-spacing: 1px; }
         .btn-custom-add:hover { background-color: #81D4FA; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(163, 218, 255, 0.6); color: #333;}
 
-        /* Report Button (Default) */
         .btn-report-bug { background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
-        .report-bug-container { display: flex; justify-content: flex-end; margin-top: 20px; padding-bottom: 20px; width: 100%; }
+        
+        /* [v1.6] 回報按鈕容器：預設靠左，確保不與 FAB 重疊 */
+        .report-bug-container { 
+            display: flex; 
+            justify-content: flex-start; /* 靠左 */
+            margin-top: 20px; 
+            padding-bottom: 20px; 
+            width: 100%; 
+        }
 
-        /* Dashboard */
         .dashboard-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; height: 100%; box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); }
         .card-history { background-color: #FAFAFA; border-top: 5px solid #AED581; }
         .card-upcoming { background-color: #FAFAFA; border-top: 5px solid #FFD54F; }
@@ -244,14 +251,12 @@
         .upcoming-list-container::-webkit-scrollbar { width: 5px; }
         .upcoming-list-container::-webkit-scrollbar-thumb { background-color: #D7CCC8; border-radius: 10px; }
         
-        /* Dashboard Buttons (Default) */
         .dashboard-btn { border: none; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(141, 110, 99, 0.1); transition: 0.2s; position: relative; border-radius: 6px; }
         .dashboard-btn:hover { transform: translateY(-1px); opacity: 0.95; }
         .btn-act { width: 100%; text-align: left; padding: 8px 15px; margin-bottom: 8px; }
         .btn-person { display: inline-block; width: auto; padding: 6px 12px; margin-right: 6px; margin-bottom: 8px; border-radius: 15px; font-size: 0.85rem; font-weight: 500; }
         .section-label { font-size: 0.85rem; color: #A1887F; margin-top: 10px; margin-bottom: 5px; font-weight: 700; letter-spacing: 1px; border-left: 3px solid #D7CCC8; padding-left: 8px; }
 
-        /* Misc */
         .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-block; }
         .color-swatch:hover { transform: scale(1.15); }
         .color-swatch.selected { border-color: #8D6E63; transform: scale(1.1); box-shadow: 0 0 0 2px #D7CCC8; }
@@ -323,7 +328,7 @@
         </div>
     </div>
 
-    <!-- 回報按鈕 (移至底部固定流) -->
+    <!-- 回報按鈕 (移至底部固定流 - 靠左) -->
     <div class="report-bug-container">
         <button class="btn-report-bug" onclick="openReportModal()">
             <i class="fa-solid fa-bug"></i> 回報問題
@@ -407,7 +412,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v1.5
+// 🏗️ 系統架構 (System Architecture) - v1.6
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -1049,7 +1054,13 @@ class App {
             },
             eventDisplay: 'block',
             contentHeight: 'auto', 
-            dayMaxEvents: 4, 
+            dayMaxEvents: true, /* [v1.6] Enable max events to show "more link" */
+            
+            // [v1.6] More Link as Triangle
+            moreLinkContent: function(args) {
+                return { html: '<i class="fa-solid fa-caret-down"></i>' };
+            },
+            
             fixedWeekCount: false,      
             eventOrder: 'order,originalStart,title', 
             navLinks: true,
