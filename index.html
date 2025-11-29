@@ -2,8 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 強制設定寬度為 1200px -->
-    <meta name="viewport" content="width=1200">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>泰國佛堂_共用行事曆</title>
     
     <!-- 核心套件 -->
@@ -17,7 +16,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - 最終版
+           🍵 溫潤日系風格 (Warm & Cozy Style) - 樣式還原修正版
            ========================================= */
         
         :root {
@@ -26,8 +25,8 @@
             --text-primary: #5D4037;   
             --text-secondary: #8D6E63; 
             --border-color: #EFEBE9;   
-            --accent-color: #8D6E63;   /* 暖褐色 (按鈕主色) */
-            --primary-action: #a3daff; /* 【維持】清透藍 (新增按鈕) */
+            --accent-color: #8D6E63;   /* 暖褐色 (一般按鈕) */
+            --primary-action: #a3daff; /* 亮藍色 (新增按鈕) */
             --border-radius: 10px;     
         }
 
@@ -35,7 +34,7 @@
             background-color: var(--bg-color);
             font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif; 
             color: var(--text-primary);
-            min-width: 1200px; /* 配合 viewport */
+            /* 移除 min-width，恢復 RWD */
         }
         
         .container { max-width: 1200px; margin-top: 40px; margin-bottom: 80px; }
@@ -57,14 +56,27 @@
             box-shadow: 0 4px 15px rgba(141, 110, 99, 0.08);
             border: 1px solid var(--border-color);
         }
-        
-        /* 固定高度 (5行) */
-        .fc-daygrid-day-frame {
-            height: 130px !important; 
-            min-height: 130px !important;
-            max-height: 130px !important;
-            overflow: hidden;
-            position: relative; 
+
+        /* --- RWD 高度控制 --- */
+        /* 電腦版 (螢幕 >= 768px)：維持固定高度 130px，美觀整齊 */
+        @media (min-width: 768px) {
+            .fc-daygrid-day-frame {
+                height: 130px !important; 
+                min-height: 130px !important;
+                max-height: 130px !important;
+                overflow: hidden;
+                position: relative; 
+            }
+        }
+        /* 手機版 (螢幕 < 768px)：自動高度 */
+        @media (max-width: 767.98px) {
+            .fc-daygrid-day-frame {
+                height: auto !important; 
+                min-height: 80px !important;
+            }
+            .fc-header-toolbar { flex-direction: column; gap: 10px; }
+            .fc-toolbar-chunk { width: 100%; justify-content: space-between; display: flex; }
+            .modal-dialog { margin: 0.5rem auto !important; }
         }
 
         /* 壓縮日期欄位 */
@@ -80,7 +92,7 @@
             margin: 0 !important;
         }
 
-        /* 移除日期連結底線 */
+        /* 移除日期連結底線 (您特別要求的點) */
         a.fc-col-header-cell-cushion, 
         a.fc-daygrid-day-number {
             text-decoration: none !important;
@@ -104,7 +116,7 @@
             z-index: 10; 
         }
         
-        /* --- 事件樣式 --- */
+        /* --- 事件樣式 (還原至您滿意的版本) --- */
         .fc-event { 
             cursor: pointer; border: none !important; 
             box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
@@ -123,6 +135,8 @@
             white-space: nowrap; 
             font-weight: 500;
             color: #5D4037 !important;
+            /* 確保單日活動也有背景色 */
+            background-color: var(--event-color, #eee); 
         }
         
         .event-type-activity { 
@@ -305,29 +319,6 @@
             box-shadow: 0 3px 8px rgba(239, 154, 154, 0.4);
             transform: translateY(-1px);
         }
-
-        /* 【關鍵修正】手機版 Modal 強制置中 (解決視窗變形與跑位) */
-        @media (max-width: 767.98px) {
-            /* 強制讓 Modal 忽略 1200px 的 viewport */
-            .modal-dialog {
-                max-width: 90vw !important; /* 使用視窗寬度的 90% */
-                margin: 1.75rem auto !important;
-                position: fixed !important; /* 固定定位 */
-                top: 50%; left: 50%;
-                transform: translate(-50%, -50%) !important; /* 正中央 */
-            }
-            
-            /* 確保彈出時背景遮罩能覆蓋整個虛擬寬度 */
-            .modal-backdrop {
-                width: 1200px !important; /* 跟 viewport 一樣寬 */
-                height: 100% !important;
-            }
-
-            /* 手機版行事曆列表模式優化 */
-            .fc-list-event-title {
-                white-space: normal !important; /* 允許換行 */
-            }
-        }
     </style>
 </head>
 <body>
@@ -404,8 +395,8 @@
                                 <input type="text" class="form-control input-link" id="linkName" placeholder="名稱 (如: 相簿)">
                             </div>
                             <div class="input-group">
-                                <input type="url" class="form-control input-link" id="linkUrl" placeholder="https://..." oninput="UIManager.checkUrlSafety(this.value)">
-                                <button type="button" class="btn btn-sm btn-success" onclick="UIManager.addLinkToLocal()"><i class="fa-solid fa-plus"></i> 加入</button>
+                                <input type="url" class="form-control input-link" id="linkUrl" placeholder="https://..." oninput="checkUrlSafety(this.value)">
+                                <button type="button" class="btn btn-sm btn-success" onclick="addLinkToLocal()"><i class="fa-solid fa-plus"></i> 加入</button>
                             </div>
                             <div id="urlSafetyFeedback" class="mt-1"></div>
                         </div>
@@ -440,6 +431,7 @@
 
                     <div class="mb-3" id="colorSection">
                         <label class="form-label text-secondary small fw-bold">標籤顏色</label>
+                        <!-- data-color 屬性已綁定，確保選色正確 -->
                         <div id="colorPalette" class="d-flex flex-wrap gap-2"></div>
                     </div>
 
@@ -452,7 +444,9 @@
                         <input type="text" class="form-control mt-2" id="captchaInput" placeholder="請輸入上方數字" required>
                     </div>
                     <div class="d-grid gap-2">
+                        <!-- 儲存按鈕 -->
                         <button type="submit" class="btn btn-save-modal">儲存資料</button>
+                        <!-- 刪除按鈕 -->
                         <button type="button" id="deleteBtn" class="btn btn-delete-modal" style="display:none;" onclick="confirmDelete()">刪除此資料</button>
                     </div>
                 </form>
@@ -502,530 +496,567 @@ const DateEngine = {
 // ==========================================
 // 📦 資料管理區
 // ==========================================
-const DataManager = {
-    allEventsData: [], 
+let allEventsData = []; // 全域變數儲存資料
+let calendar;
+let currentCaptcha = "";
+let currentReportCaptcha = "";
+let isEditingPastActivity = false;
+let currentLinks = [];
 
-    fetchAndSplit: function(info, successCallback, failureCallback) {
-        if (DataManager.allEventsData.length === 0) {
-            Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-        }
-        
-        fetch(SCRIPT_URL)
-            .then(res => res.json())
-            .then(data => {
-                if(data.result && data.result.startsWith("Error")) { return; }
-                let explodedEvents = [];
-                DataManager.allEventsData = []; 
+function fetchAndSplitEvents(info, successCallback, failureCallback) {
+    if (allEventsData.length === 0) {
+        Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+    }
+    
+    fetch(SCRIPT_URL)
+        .then(res => res.json())
+        .then(data => {
+            if(data.result && data.result.startsWith("Error")) { return; }
+            let explodedEvents = [];
+            allEventsData = []; 
 
-                data.forEach(item => {
-                    const type = item.type || (item.extendedProps && item.extendedProps.type) || 'person';
-                    const isActivity = (type === 'activity');
-                    const originalStartTimestamp = new Date(item.start).getTime();
-                    const itemOrder = isActivity ? -1 : 10;
+            data.forEach(item => {
+                const type = item.type || (item.extendedProps && item.extendedProps.type) || 'person';
+                const isActivity = (type === 'activity');
+                const originalStartTimestamp = new Date(item.start).getTime();
+                const itemOrder = isActivity ? -1 : 10;
 
-                    DataManager.allEventsData.push({
-                        id: item.id, title: item.title, start: item.start, end: item.end,
-                        backgroundColor: item.backgroundColor, textColor: item.textColor,
-                        extendedProps: { 
-                            type: type, 
-                            order: itemOrder,
-                            linkName: item.linkName || '',
-                            linkUrl: item.linkUrl || ''
-                        }, 
-                        order: itemOrder, type: type
-                    });
-
-                    if (item.start) {
-                        const startDateStr = DateEngine.getLocalDateString(item.start);
-                        let endDateStr = item.end ? DateEngine.getLocalDateString(item.end) : startDateStr;
-
-                        if (isActivity) {
-                            endDateStr = DateEngine.addDaysToDateString(endDateStr, 1);
-                        }
-
-                        let currentStr = startDateStr;
-                        while (currentStr < endDateStr) {
-                            const classList = ['hide-time-text'];
-                            if (isActivity) classList.push('event-type-activity');
-                            else classList.push('person-pill');
-
-                            explodedEvents.push({
-                                id: item.id, title: item.title, start: currentStr, end: currentStr, allDay: true,
-                                backgroundColor: item.backgroundColor, textColor: item.textColor,
-                                extendedProps: { type: type, order: itemOrder },
-                                originalStart: originalStartTimestamp, 
-                                order: itemOrder,
-                                classNames: classList
-                            });
-                            currentStr = DateEngine.addDaysToDateString(currentStr, 1);
-                        }
-                    }
+                // 備份原始資料
+                allEventsData.push({
+                    id: item.id, title: item.title, start: item.start, end: item.end,
+                    backgroundColor: item.backgroundColor, textColor: item.textColor,
+                    extendedProps: { 
+                        type: type, 
+                        order: itemOrder,
+                        linkName: item.linkName || '',
+                        linkUrl: item.linkUrl || ''
+                    }, 
+                    order: itemOrder, type: type
                 });
 
-                UIManager.renderDashboard();
-                successCallback(explodedEvents); 
-                Swal.close();
-            })
-            .catch(err => { failureCallback(err); });
-    },
+                if (item.start) {
+                    const startDateStr = DateEngine.getLocalDateString(item.start);
+                    let endDateStr = item.end ? DateEngine.getLocalDateString(item.end) : startDateStr;
 
-    save: function(data, action) {
-        Swal.fire({title:'儲存中...',didOpen:()=>{Swal.showLoading()}});
-        fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:action,...data}) })
-        .then(()=>{ setTimeout(()=>{ 
-            Swal.fire({icon:'success',title:'完成',timer:1500,showConfirmButton:false}); 
-            calendar.refetchEvents(); 
-            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); 
-        },2000); })
-        .catch(()=>{ Swal.fire('連線異常','請檢查網路','error'); });
-    },
+                    if (isActivity) {
+                        endDateStr = DateEngine.addDaysToDateString(endDateStr, 1);
+                    }
 
-    delete: function(id) {
-        Swal.fire({title:'刪除中...',didOpen:()=>{Swal.showLoading()}});
-        fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'delete',id:id}) })
-        .then(()=>{ setTimeout(()=>{ 
-            Swal.fire('已刪除','','success'); 
-            calendar.refetchEvents(); 
-            bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); 
-        },2000); });
-    },
+                    let currentStr = startDateStr;
+                    // 安全迴圈
+                    let safetyLoop = 0;
+                    while (currentStr < endDateStr) {
+                        if(safetyLoop++ > 365) break;
 
-    sendReport: function(content) {
-        Swal.fire({title:'傳送中...',didOpen:()=>{Swal.showLoading()}});
-        fetch(SCRIPT_URL, { 
-            method:'POST', 
-            mode:'no-cors', 
-            headers:{'Content-Type':'text/plain'}, 
-            body:JSON.stringify({ action: 'send_report', content: content }) 
-        })
-        .then(() => {
-            Swal.fire('已回報', '感謝您的回饋，我們會盡快處理！', 'success');
-        })
-        .catch(() => {
-            Swal.fire('失敗', '無法傳送回報，請稍後再試', 'error');
-        });
-    }
-};
+                        const classList = ['hide-time-text'];
+                        if (isActivity) classList.push('event-type-activity');
+                        else classList.push('person-pill');
 
-// ==========================================
-// 🎨 介面管理區 (UI Manager)
-// ==========================================
-const UIManager = {
-    currentCaptcha: "",
-    currentReportCaptcha: "", 
-    isEditingPastActivity: false, 
-    currentLinks: [], 
-
-    renderDashboard: function() {
-        this.renderUpcoming();
-        this.initHistorySearch();
-    },
-
-    renderUpcoming: function() {
-        const listContainer = document.getElementById('upcomingList');
-        const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
-        
-        const upcomingEvents = DataManager.allEventsData.filter(e => DateEngine.getLocalDateString(e.start) >= todayStr);
-        if (upcomingEvents.length === 0) { listContainer.innerHTML = '<div class="text-center text-muted py-4 small">近期無活動</div>'; return; }
-        
-        const activities = upcomingEvents.filter(e => (e.extendedProps?.type || e.type) === 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
-        const people = upcomingEvents.filter(e => (e.extendedProps?.type || e.type) !== 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
-        
-        let html = '';
-        if (activities.length > 0) {
-            html += `<div class="section-label">近期活動</div>`;
-            activities.forEach(e => {
-                const datePart = DateEngine.getLocalDateString(e.start);
-                const timePart = e.start.substring(11, 16);
-                html += `<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')"><div class="d-flex justify-content-between"><strong>${e.title}</strong><small>${datePart} ${timePart}</small></div></button>`;
+                        explodedEvents.push({
+                            id: item.id, title: item.title, start: currentStr, end: currentStr, allDay: true,
+                            backgroundColor: item.backgroundColor, textColor: item.textColor,
+                            extendedProps: { type: type, order: itemOrder },
+                            originalStart: originalStartTimestamp, 
+                            order: itemOrder,
+                            classNames: classList
+                        });
+                        currentStr = DateEngine.addDaysToDateString(currentStr, 1);
+                    }
+                }
             });
-        }
-        if (people.length > 0) {
-            html += `<div class="section-label">近期參與人員</div><div class="d-block">`;
-            people.forEach(e => {
-                const datePart = DateEngine.getLocalDateString(e.start);
-                html += `<button class="btn dashboard-btn btn-person" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')">${datePart} ${e.title}</button>`;
-            });
-            html += `</div>`;
-        }
-        listContainer.innerHTML = html;
-    },
 
-    initHistorySearch: function() {
-        const years = new Set(DataManager.allEventsData.map(e => DateEngine.getLocalDateString(e.start).substring(0, 4)));
-        const sorted = Array.from(years).sort((a,b)=>b-a);
-        const sel = document.getElementById('searchYear');
-        sel.innerHTML = '<option value="">選擇年份...</option>';
-        sorted.forEach(y => sel.innerHTML += `<option value="${y}">${y}年</option>`);
-    },
+            renderDashboard();
+            successCallback(explodedEvents); 
+            Swal.close();
+        })
+        .catch(err => { failureCallback(err); });
+}
 
-    filterHistoryResult: function() {
-        const yVal = document.getElementById('searchYear').value;
-        const tVal = document.getElementById('searchType').value;
-        const resSel = document.getElementById('searchResult');
-        resSel.innerHTML = '<option value="">請選擇...</option>';
-        if(!yVal) return;
-        
-        const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
-        
-        const filtered = DataManager.allEventsData.filter(e => {
-            const dateStr = DateEngine.getLocalDateString(e.start);
-            const y = dateStr.substring(0, 4);
-            const type = e.extendedProps?.type || e.type || 'person';
-            return y === yVal && (tVal==='all' || type===tVal) && (dateStr < todayStr);
-        }).sort((a,b)=>new Date(a.start)-new Date(b.start));
-        
-        if(filtered.length===0) { resSel.innerHTML='<option value="">查無資料</option>'; return; }
-        filtered.forEach(e => {
-            const datePart = DateEngine.getLocalDateString(e.start);
-            resSel.innerHTML += `<option value="${e.start}">${datePart} - ${e.title}</option>`;
-        });
-    },
+function saveEventToCloud(data, action) {
+    Swal.fire({title:'儲存中...',didOpen:()=>{Swal.showLoading()}});
+    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:action,...data}) })
+    .then(()=>{ setTimeout(()=>{ 
+        Swal.fire({icon:'success',title:'完成',timer:1500,showConfirmButton:false}); 
+        calendar.refetchEvents(); 
+        bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); 
+    },2000); })
+    .catch(()=>{ Swal.fire('連線異常','請檢查網路','error'); });
+}
 
-    populateTimeSelects: function() {
-        const s = document.getElementById('startTime'), e = document.getElementById('endTime');
-        let opt=''; for(let h=0;h<24;h++) for(let m=0;m<60;m+=15) { 
-            let t = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; 
-            opt+=`<option value="${t}">${t}</option>`; 
-        }
-        s.innerHTML=opt; e.innerHTML=opt;
-    },
+function deleteEventFromCloud(id) {
+    Swal.fire({title:'刪除中...',didOpen:()=>{Swal.showLoading()}});
+    fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'delete',id:id}) })
+    .then(()=>{ setTimeout(()=>{ 
+        Swal.fire('已刪除','','success'); 
+        calendar.refetchEvents(); 
+        bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); 
+    },2000); });
+}
 
-    renderColorPalette: function() {
-        const palette = document.getElementById('colorPalette');
-        let html = '';
-        PERSON_COLORS.forEach((color, index) => {
-            const selectedClass = index === 0 ? 'selected' : '';
-            html += `<div class="color-swatch ${selectedClass}" style="background-color: ${color};" data-color="${color}" onclick="selectColor(this, '${color}')"></div>`;
-        });
-        palette.innerHTML = html;
-        document.getElementById('selectedColor').value = PERSON_COLORS[0];
-    },
+function sendReport(content) {
+    Swal.fire({title:'傳送中...',didOpen:()=>{Swal.showLoading()}});
+    fetch(SCRIPT_URL, { 
+        method:'POST', 
+        mode:'no-cors', 
+        headers:{'Content-Type':'text/plain'}, 
+        body:JSON.stringify({ action: 'send_report', content: content }) 
+    })
+    .then(() => {
+        Swal.fire('已回報', '感謝您的回饋，我們會盡快處理！', 'success');
+    })
+    .catch(() => {
+        Swal.fire('失敗', '無法傳送回報，請稍後再試', 'error');
+    });
+}
 
-    selectSwatchByColor: function(color) {
-        document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-        if (!color) return;
-        const swatch = document.querySelector(`.color-swatch[data-color="${color}"]`);
-        if (swatch) {
-            swatch.classList.add('selected');
-            document.getElementById('selectedColor').value = color;
-        } else {
-            const firstSwatch = document.querySelector('.color-swatch');
-            if (firstSwatch) {
-                firstSwatch.classList.add('selected');
-                document.getElementById('selectedColor').value = firstSwatch.getAttribute('data-color');
-            }
-        }
-    },
+// --- 儀表板邏輯 ---
+function renderDashboard() {
+    renderUpcoming();
+    initHistorySearch();
+}
 
-    toggleFormFields: function() {
-        const type = document.getElementById('eventType').value;
-        document.getElementById('nameLabel').innerText = type==='activity'?'活動名稱':'參與人姓名';
-        document.querySelectorAll('.time-field-group').forEach(el => el.style.display = type==='activity'?'block':'none');
-        
-        const colorSection = document.getElementById('colorSection');
-        if (type === 'activity') {
-            colorSection.style.display = 'none';
-            document.getElementById('selectedColor').value = ACTIVITY_COLOR;
-            
-            const completedSection = document.getElementById('completedSection');
-            if (this.isEditingPastActivity) {
-                completedSection.style.display = 'block';
-                this.renderLinkList();
-            } else {
-                completedSection.style.display = 'none';
-            }
-        } else {
-            colorSection.style.display = 'block';
-            // 載入上次選擇的顏色
-            const lastColor = localStorage.getItem('lastPersonColor');
-            const defaultColor = (lastColor && PERSON_COLORS.includes(lastColor)) ? lastColor : PERSON_COLORS[0];
-            
-            this.selectSwatchByColor(defaultColor);
-            document.getElementById('completedSection').style.display = 'none';
-        }
-    },
+function renderUpcoming() {
+    const listContainer = document.getElementById('upcomingList');
+    const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
     
-    // --- 多連結管理 ---
-    addLinkToLocal: function() {
-        if (this.currentLinks.length >= 3) {
-            Swal.fire('數量限制', '最多只能新增 3 個連結', 'warning');
-            return;
-        }
-        const name = document.getElementById('linkName').value.trim();
-        const url = document.getElementById('linkUrl').value.trim();
-        
-        if (!name || !url) { Swal.fire('請輸入資料', '名稱與網址皆為必填', 'warning'); return; }
-        
-        this.currentLinks.push({ name: name, url: url });
-        this.renderLinkList();
-        document.getElementById('linkName').value = '';
-        document.getElementById('linkUrl').value = '';
-        document.getElementById('urlSafetyFeedback').innerHTML = '';
-    },
-
-    renderLinkList: function() {
-        const container = document.getElementById('savedLinksContainer');
-        const list = document.getElementById('savedLinksList');
-        list.innerHTML = '';
-        
-        if (this.currentLinks.length === 0) {
-            container.style.display = 'none';
-            return;
-        }
-        container.style.display = 'block';
-
-        this.currentLinks.forEach((link, index) => {
-            let badgeHtml = '';
-            try {
-                const u = new URL(link.url);
-                if (u.protocol === 'https:') badgeHtml = '<span class="link-safety-badge badge-safe"><i class="fa-solid fa-lock"></i> 安全</span>';
-                else badgeHtml = '<span class="link-safety-badge badge-unsafe"><i class="fa-solid fa-unlock"></i> 不安全</span>';
-            } catch(e) { badgeHtml = '<span class="link-safety-badge badge-unsafe">格式錯誤</span>'; }
-
-            const html = `
-                <div class="saved-link-item">
-                    <div class="saved-link-info">
-                        <span class="saved-link-name">${link.name}</span>
-                        <div>
-                            <a href="${link.url}" target="_blank" class="saved-link-url">${link.url}</a>
-                            ${badgeHtml}
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="UIManager.openDeleteLinkCaptchaModal(${index})">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            list.insertAdjacentHTML('beforeend', html);
+    const upcomingEvents = allEventsData.filter(e => DateEngine.getLocalDateString(e.start) >= todayStr);
+    if (upcomingEvents.length === 0) { listContainer.innerHTML = '<div class="text-center text-muted py-4 small">近期無活動</div>'; return; }
+    
+    const activities = upcomingEvents.filter(e => (e.extendedProps?.type || e.type) === 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
+    const people = upcomingEvents.filter(e => (e.extendedProps?.type || e.type) !== 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
+    
+    let html = '';
+    if (activities.length > 0) {
+        html += `<div class="section-label">近期活動</div>`;
+        activities.forEach(e => {
+            const datePart = DateEngine.getLocalDateString(e.start);
+            const timePart = e.start.substring(11, 16);
+            html += `<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')"><div class="d-flex justify-content-between"><strong>${e.title}</strong><small>${datePart} ${timePart}</small></div></button>`;
         });
-    },
-
-    openDeleteLinkCaptchaModal: function(index) {
-        this.refreshReportCaptcha();
-        Swal.fire({
-            title: '刪除連結確認',
-            html: `
-                <p class="text-secondary mb-2">請輸入驗證碼以刪除此連結</p>
-                <div class="d-flex align-items-center mb-2">
-                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.currentReportCaptcha}</div>
-                    <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="UIManager.refreshReportCaptcha()"></i>
-                </div>
-                <input type="text" id="deleteLinkCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
-            `,
-            showCancelButton: true,
-            confirmButtonText: '確認刪除',
-            confirmButtonColor: '#d32f2f',
-            cancelButtonText: '取消',
-            preConfirm: () => {
-                const input = document.getElementById('deleteLinkCaptchaInput').value;
-                if (input !== this.currentReportCaptcha) {
-                    Swal.showValidationMessage('驗證碼錯誤');
-                    return false;
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.currentLinks.splice(index, 1);
-                this.renderLinkList();
-            }
-        });
-    },
-
-    openAddModal: function() {
-        document.getElementById('eventForm').reset();
-        document.getElementById('eventId').value = '';
-        document.getElementById('modalTitle').innerText = '新增資料';
-        document.getElementById('deleteBtn').style.display = 'none';
-        
-        this.isEditingPastActivity = false;
-        this.currentLinks = []; 
-        document.getElementById('completedSection').style.display = 'none'; 
-        document.getElementById('urlSafetyFeedback').innerHTML = '';
-        
-        const currentDate = calendar.getDate(); 
-        const today = new Date();
-        let targetDate = currentDate;
-        if (currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear()) {
-            targetDate = today;
-        }
-        const dStr = DateEngine.getLocalDateString(targetDate.toISOString());
-        
-        document.getElementById('startDate').value = dStr; document.getElementById('endDate').value = dStr;
-        const r = 15-(new Date().getMinutes()%15); 
-        const now = new Date(); now.setMinutes(now.getMinutes()+r);
-        const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-        document.getElementById('startTime').value = t; document.getElementById('endTime').value = t;
-        
-        this.generateCaptcha(); 
-        this.toggleFormFields(); 
-        new bootstrap.Modal(document.getElementById('eventModal')).show();
-    },
-
-    openEditModal: function(e) {
-        document.getElementById('eventId').value = e.id;
-        document.getElementById('modalTitle').innerText = '編輯資料';
-        document.getElementById('deleteBtn').style.display = 'block';
-        
-        const type = e.extendedProps?.type || 'person';
-        document.getElementById('eventType').value = type;
-        document.getElementById('eventTitle').value = e.title;
-
-        // 編輯時，強制覆蓋為該事件的顏色
-        const bgColor = e.backgroundColor;
-        
-        // 切換狀態 (會觸發預設選色)
-        this.toggleFormFields();
-
-        // 如果是人員，手動選回正確顏色 (必須在 toggle 之後)
-        if (type !== 'activity' && bgColor) {
-             this.selectSwatchByColor(bgColor);
-        }
-        
-        const originalEvent = DataManager.allEventsData.find(evt => evt.id === e.id) || e; 
-        const props = originalEvent.extendedProps || {};
-
-        const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
-        this.isEditingPastActivity = false;
-        if (originalEvent.start && type === 'activity') {
-            const evtEndStr = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : DateEngine.getLocalDateString(originalEvent.start);
-            if (evtEndStr <= todayStr) {
-                this.isEditingPastActivity = true;
-            }
-        }
-
-        try {
-            this.currentLinks = JSON.parse(props.linkUrl || '[]');
-        } catch(err) {
-            if (props.linkUrl && !props.linkUrl.startsWith('[')) {
-                this.currentLinks = [{name: props.linkName || '連結', url: props.linkUrl}];
-            } else {
-                this.currentLinks = [];
-            }
-        }
-        
-        document.getElementById('linkName').value = '';
-        document.getElementById('linkUrl').value = '';
-        document.getElementById('urlSafetyFeedback').innerHTML = '';
-
-        // 重新檢查是否顯示連結區
-        if (this.isEditingPastActivity && type === 'activity') {
-            document.getElementById('completedSection').style.display = 'block';
-            this.renderLinkList();
-        } else {
-            document.getElementById('completedSection').style.display = 'none';
-        }
-
-        if(originalEvent.start) {
-            const sStr = DateEngine.getLocalDateString(originalEvent.start);
-            document.getElementById('startDate').value = sStr;
-
-            if (type === 'person') {
-                 const eStrRaw = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : sStr;
-                 const correctEndStr = DateEngine.addDaysToDateString(eStrRaw, -1);
-                 document.getElementById('endDate').value = correctEndStr;
-            } else {
-                 const startT = originalEvent.start.substring(11, 16);
-                 document.getElementById('startTime').value = startT;
-                 if(originalEvent.end) {
-                     const endDStr = DateEngine.getLocalDateString(originalEvent.end);
-                     const endT = originalEvent.end.substring(11, 16);
-                     document.getElementById('endDate').value = endDStr;
-                     document.getElementById('endTime').value = endT;
-                 }
-            }
-        }
-        this.generateCaptcha(); 
-        new bootstrap.Modal(document.getElementById('eventModal')).show();
-    },
-
-    jumpToDate: function(str) {
-        calendar.changeView('dayGridMonth', str);
-        document.getElementById('calendar').scrollIntoView({behavior:'smooth'});
-        
-        const targetDateStr = DateEngine.getLocalDateString(str);
-
-        setTimeout(() => {
-            document.querySelectorAll('.highlight-target-day').forEach(el => el.classList.remove('highlight-target-day'));
-            const targetEl = document.querySelector(`.fc-daygrid-day[data-date="${targetDateStr}"]`);
-            if (targetEl) {
-                targetEl.classList.add('highlight-target-day');
-                targetEl.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
-            }
-        }, 200);
-    },
-
-    checkUrlSafety: function(url) {
-        const feedback = document.getElementById('urlSafetyFeedback');
-        if (!url) { feedback.innerHTML = ''; return; }
-        try {
-            const urlObj = new URL(url);
-            if (urlObj.protocol === 'https:') {
-                 feedback.innerHTML = '<span class="text-success small fw-bold"><i class="fa-solid fa-circle-check me-1"></i>連結格式安全 (HTTPS)</span>';
-            } else {
-                 feedback.innerHTML = '<span class="text-warning small fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>非加密 (HTTP) 或格式有誤，請檢查</span>';
-            }
-        } catch (e) {
-             feedback.innerHTML = '<span class="text-danger small fw-bold"><i class="fa-solid fa-xmark me-1"></i>網址格式錯誤</span>';
-        }
-    },
-
-    openReportModal: function() {
-        this.refreshReportCaptcha(); 
-        Swal.fire({
-            title: '回報問題',
-            html: `
-                <textarea id="reportText" class="form-control mb-3" rows="4" placeholder="請描述您遇到的錯誤或建議..."></textarea>
-                <div class="d-flex align-items-center mb-2">
-                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.currentReportCaptcha}</div>
-                    <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="UIManager.refreshReportCaptcha()"></i>
-                </div>
-                <input type="text" id="reportCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
-            `,
-            showCancelButton: true,
-            confirmButtonText: '送出回報',
-            confirmButtonColor: '#90A4AE',
-            cancelButtonText: '取消',
-            preConfirm: () => {
-                const content = document.getElementById('reportText').value;
-                const inputCaptcha = document.getElementById('reportCaptchaInput').value;
-                
-                if (!content) {
-                    Swal.showValidationMessage('請輸入回報內容');
-                    return false;
-                }
-                if (inputCaptcha !== this.currentReportCaptcha) {
-                    Swal.showValidationMessage('驗證碼錯誤');
-                    return false;
-                }
-                return content;
-            }
-        }).then((result) => {
-            if (result.isConfirmed) DataManager.sendReport(result.value);
-        });
-    },
-
-    refreshReportCaptcha: function() {
-        this.currentReportCaptcha = Math.floor(1000 + Math.random()*9000).toString();
-        const display = document.getElementById('reportCaptchaDisplay');
-        if (display) display.innerText = this.currentReportCaptcha;
-    },
-
-    generateCaptcha: function() {
-        this.currentCaptcha = Math.floor(1000 + Math.random()*9000).toString();
-        document.getElementById('captchaDisplay').innerText = this.currentCaptcha;
-        document.getElementById('captchaInput').value = '';
     }
-};
+    if (people.length > 0) {
+        html += `<div class="section-label">近期參與人員</div><div class="d-block">`;
+        people.forEach(e => {
+            const datePart = DateEngine.getLocalDateString(e.start);
+            html += `<button class="btn dashboard-btn btn-person" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')">${datePart} ${e.title}</button>`;
+        });
+        html += `</div>`;
+    }
+    listContainer.innerHTML = html;
+}
 
-// ==========================================
-// 🚀 應用程式啟動區
-// ==========================================
-let calendar; 
+function initHistorySearch() {
+    const years = new Set(allEventsData.map(e => DateEngine.getLocalDateString(e.start).substring(0, 4)));
+    const sorted = Array.from(years).sort((a,b)=>b-a);
+    const sel = document.getElementById('searchYear');
+    sel.innerHTML = '<option value="">選擇年份...</option>';
+    sorted.forEach(y => sel.innerHTML += `<option value="${y}">${y}年</option>`);
+}
+
+function filterHistoryResult() {
+    const yVal = document.getElementById('searchYear').value;
+    const tVal = document.getElementById('searchType').value;
+    const resSel = document.getElementById('searchResult');
+    resSel.innerHTML = '<option value="">請選擇...</option>';
+    if(!yVal) return;
+    
+    const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
+    
+    const filtered = allEventsData.filter(e => {
+        const dateStr = DateEngine.getLocalDateString(e.start);
+        const y = dateStr.substring(0, 4);
+        const type = e.extendedProps?.type || e.type || 'person';
+        return y === yVal && (tVal==='all' || type===tVal) && (dateStr < todayStr);
+    }).sort((a,b)=>new Date(a.start)-new Date(b.start));
+    
+    if(filtered.length===0) { resSel.innerHTML='<option value="">查無資料</option>'; return; }
+    filtered.forEach(e => {
+        const datePart = DateEngine.getLocalDateString(e.start);
+        resSel.innerHTML += `<option value="${e.start}">${datePart} - ${e.title}</option>`;
+    });
+}
+
+// --- 介面與表單 ---
+function populateTimeSelects() {
+    const s = document.getElementById('startTime'), e = document.getElementById('endTime');
+    let opt=''; for(let h=0;h<24;h++) for(let m=0;m<60;m+=15) { 
+        let t = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; 
+        opt+=`<option value="${t}">${t}</option>`; 
+    }
+    s.innerHTML=opt; e.innerHTML=opt;
+}
+
+function renderColorPalette() {
+    const palette = document.getElementById('colorPalette');
+    let html = '';
+    PERSON_COLORS.forEach((color, index) => {
+        const selectedClass = index === 0 ? 'selected' : '';
+        html += `<div class="color-swatch ${selectedClass}" style="background-color: ${color};" data-color="${color}" onclick="selectColor(this, '${color}')"></div>`;
+    });
+    palette.innerHTML = html;
+    document.getElementById('selectedColor').value = PERSON_COLORS[0];
+}
+
+function selectColor(el, color) {
+    // 這裡為了符合 HTML onclick 的介面，做轉接
+    selectSwatchByColor(color);
+}
+
+function selectSwatchByColor(color) {
+    document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+    if (!color) return;
+    const swatch = document.querySelector(`.color-swatch[data-color="${color}"]`);
+    if (swatch) {
+        swatch.classList.add('selected');
+        document.getElementById('selectedColor').value = color;
+    } else {
+        const firstSwatch = document.querySelector('.color-swatch');
+        if (firstSwatch) {
+            firstSwatch.classList.add('selected');
+            document.getElementById('selectedColor').value = firstSwatch.getAttribute('data-color');
+        }
+    }
+}
+
+function toggleFormFields() {
+    const type = document.getElementById('eventType').value;
+    document.getElementById('nameLabel').innerText = type==='activity'?'活動名稱':'參與人姓名';
+    document.querySelectorAll('.time-field-group').forEach(el => el.style.display = type==='activity'?'block':'none');
+    
+    const colorSection = document.getElementById('colorSection');
+    if (type === 'activity') {
+        colorSection.style.display = 'none';
+        document.getElementById('selectedColor').value = ACTIVITY_COLOR;
+        
+        const completedSection = document.getElementById('completedSection');
+        if (isEditingPastActivity) {
+            completedSection.style.display = 'block';
+            renderLinkList();
+        } else {
+            completedSection.style.display = 'none';
+        }
+    } else {
+        colorSection.style.display = 'block';
+        const lastColor = localStorage.getItem('lastPersonColor');
+        const defaultColor = (lastColor && PERSON_COLORS.includes(lastColor)) ? lastColor : PERSON_COLORS[0];
+        
+        // 只有新增模式下才自動載入預設顏色
+        if (!document.getElementById('eventId').value) {
+            selectSwatchByColor(defaultColor);
+        }
+        
+        document.getElementById('completedSection').style.display = 'none';
+    }
+}
+
+function syncDates() {
+    const s = document.getElementById('startDate'), e = document.getElementById('endDate');
+    if(!e.value || e.value < s.value) e.value = s.value;
+}
+function syncTimes() {
+    const s = document.getElementById('startTime'), e = document.getElementById('endTime');
+    const sDate = document.getElementById('startDate').value;
+    const eDate = document.getElementById('endDate').value;
+    if (sDate === eDate) {
+        if(e.value < s.value) e.value = s.value;
+    }
+}
+
+// --- 多連結管理 ---
+function addLinkToLocal() {
+    if (currentLinks.length >= 3) {
+        Swal.fire('數量限制', '最多只能新增 3 個連結', 'warning');
+        return;
+    }
+    const name = document.getElementById('linkName').value.trim();
+    const url = document.getElementById('linkUrl').value.trim();
+    
+    if (!name || !url) { Swal.fire('請輸入資料', '名稱與網址皆為必填', 'warning'); return; }
+    
+    currentLinks.push({ name: name, url: url });
+    renderLinkList();
+    document.getElementById('linkName').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('urlSafetyFeedback').innerHTML = '';
+}
+
+function renderLinkList() {
+    const container = document.getElementById('savedLinksContainer');
+    const list = document.getElementById('savedLinksList');
+    const badge = document.getElementById('linkCountBadge');
+    list.innerHTML = '';
+    
+    badge.innerText = `${currentLinks.length}/3`;
+
+    if (currentLinks.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'block';
+
+    currentLinks.forEach((link, index) => {
+        let badgeHtml = '';
+        try {
+            const u = new URL(link.url);
+            if (u.protocol === 'https:') badgeHtml = '<span class="link-safety-badge badge-safe"><i class="fa-solid fa-lock"></i> 安全</span>';
+            else badgeHtml = '<span class="link-safety-badge badge-unsafe"><i class="fa-solid fa-unlock"></i> 不安全</span>';
+        } catch(e) { badgeHtml = '<span class="link-safety-badge badge-unsafe">格式錯誤</span>'; }
+
+        const html = `
+            <div class="saved-link-item">
+                <div class="saved-link-info">
+                    <span class="saved-link-name">${link.name}</span>
+                    <div>
+                        <a href="${link.url}" target="_blank" class="saved-link-url">${link.url}</a>
+                        ${badgeHtml}
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="openDeleteLinkCaptchaModal(${index})">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+function openDeleteLinkCaptchaModal(index) {
+    refreshReportCaptcha();
+    Swal.fire({
+        title: '刪除連結確認',
+        html: `
+            <p class="text-secondary mb-2">請輸入驗證碼以刪除此連結</p>
+            <div class="d-flex align-items-center mb-2">
+                <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${currentReportCaptcha}</div>
+                <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="refreshReportCaptcha()"></i>
+            </div>
+            <input type="text" id="deleteLinkCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
+        `,
+        showCancelButton: true,
+        confirmButtonText: '確認刪除',
+        confirmButtonColor: '#d32f2f',
+        cancelButtonText: '取消',
+        preConfirm: () => {
+            const input = document.getElementById('deleteLinkCaptchaInput').value;
+            if (input !== currentReportCaptcha) {
+                Swal.showValidationMessage('驗證碼錯誤');
+                return false;
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            currentLinks.splice(index, 1);
+            renderLinkList();
+        }
+    });
+}
+
+function checkUrlSafety(url) {
+    const feedback = document.getElementById('urlSafetyFeedback');
+    if (!url) { feedback.innerHTML = ''; return; }
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.protocol === 'https:') {
+                feedback.innerHTML = '<span class="text-success small fw-bold"><i class="fa-solid fa-circle-check me-1"></i>連結格式安全 (HTTPS)</span>';
+        } else {
+                feedback.innerHTML = '<span class="text-warning small fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>非加密 (HTTP) 或格式有誤，請檢查</span>';
+        }
+    } catch (e) {
+            feedback.innerHTML = '<span class="text-danger small fw-bold"><i class="fa-solid fa-xmark me-1"></i>網址格式錯誤</span>';
+    }
+}
+
+function openAddModal() {
+    document.getElementById('eventForm').reset();
+    document.getElementById('eventId').value = '';
+    document.getElementById('modalTitle').innerText = '新增資料';
+    document.getElementById('deleteBtn').style.display = 'none';
+    
+    isEditingPastActivity = false;
+    currentLinks = []; 
+    document.getElementById('completedSection').style.display = 'none'; 
+    document.getElementById('urlSafetyFeedback').innerHTML = '';
+    
+    const currentDate = calendar.getDate(); 
+    const today = new Date();
+    let targetDate = currentDate;
+    if (currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear()) {
+        targetDate = today;
+    }
+    const dStr = DateEngine.getLocalDateString(targetDate.toISOString());
+    
+    document.getElementById('startDate').value = dStr; document.getElementById('endDate').value = dStr;
+    const r = 15-(new Date().getMinutes()%15); 
+    const now = new Date(); now.setMinutes(now.getMinutes()+r);
+    const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+    document.getElementById('startTime').value = t; document.getElementById('endTime').value = t;
+    
+    generateCaptcha(); 
+    // 重置為空，確保 toggleFormFields 會去抓 localStorage
+    document.getElementById('selectedColor').value = ''; 
+    toggleFormFields(); 
+    new bootstrap.Modal(document.getElementById('eventModal')).show();
+}
+
+function openEditModal(e) {
+    document.getElementById('eventId').value = e.id;
+    document.getElementById('modalTitle').innerText = '編輯資料';
+    document.getElementById('deleteBtn').style.display = 'block';
+    
+    const type = e.extendedProps?.type || 'person';
+    document.getElementById('eventType').value = type;
+    document.getElementById('eventTitle').value = e.title;
+
+    // 編輯時，強制覆蓋為該事件的顏色
+    const bgColor = e.backgroundColor;
+    
+    // 切換狀態 (會觸發預設選色)
+    toggleFormFields();
+
+    // 如果是人員，手動選回正確顏色 (必須在 toggle 之後)
+    if (type !== 'activity' && bgColor) {
+            selectSwatchByColor(bgColor);
+    }
+    
+    const originalEvent = allEventsData.find(evt => evt.id === e.id) || e; 
+    const props = originalEvent.extendedProps || {};
+
+    const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
+    
+    isEditingPastActivity = false;
+    if (originalEvent.start && type === 'activity') {
+        const evtEndStr = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : DateEngine.getLocalDateString(originalEvent.start);
+        if (evtEndStr <= todayStr) {
+            isEditingPastActivity = true;
+        }
+    }
+
+    try {
+        currentLinks = JSON.parse(props.linkUrl || '[]');
+    } catch(err) {
+        if (props.linkUrl && !props.linkUrl.startsWith('[')) {
+            currentLinks = [{name: props.linkName || '連結', url: props.linkUrl}];
+        } else {
+            currentLinks = [];
+        }
+    }
+    
+    document.getElementById('linkName').value = '';
+    document.getElementById('linkUrl').value = '';
+    document.getElementById('urlSafetyFeedback').innerHTML = '';
+
+    // 重新檢查是否顯示連結區
+    if (isEditingPastActivity && type === 'activity') {
+        document.getElementById('completedSection').style.display = 'block';
+        renderLinkList();
+    } else {
+        document.getElementById('completedSection').style.display = 'none';
+    }
+
+    if(originalEvent.start) {
+        const sStr = DateEngine.getLocalDateString(originalEvent.start);
+        document.getElementById('startDate').value = sStr;
+
+        if (type === 'person') {
+                const eStrRaw = originalEvent.end ? DateEngine.getLocalDateString(originalEvent.end) : sStr;
+                const correctEndStr = DateEngine.addDaysToDateString(eStrRaw, -1);
+                document.getElementById('endDate').value = correctEndStr;
+        } else {
+                const startT = originalEvent.start.substring(11, 16);
+                document.getElementById('startTime').value = startT;
+                if(originalEvent.end) {
+                    const endDStr = DateEngine.getLocalDateString(originalEvent.end);
+                    const endT = originalEvent.end.substring(11, 16);
+                    document.getElementById('endDate').value = endDStr;
+                    document.getElementById('endTime').value = endT;
+                }
+        }
+    }
+    generateCaptcha(); 
+    new bootstrap.Modal(document.getElementById('eventModal')).show();
+}
+
+function jumpToDate(str) {
+    calendar.changeView('dayGridMonth', str);
+    document.getElementById('calendar').scrollIntoView({behavior:'smooth'});
+    
+    const targetDateStr = DateEngine.getLocalDateString(str);
+
+    setTimeout(() => {
+        document.querySelectorAll('.highlight-target-day').forEach(el => el.classList.remove('highlight-target-day'));
+        const targetEl = document.querySelector(`.fc-daygrid-day[data-date="${targetDateStr}"]`);
+        if (targetEl) {
+            targetEl.classList.add('highlight-target-day');
+            targetEl.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+        }
+    }, 200);
+}
+
+function jumpToSelectedEvent() { 
+    const val = document.getElementById('searchResult').value;
+    if(val) {
+        jumpToDate(val); 
+    } else {
+        Swal.fire({icon:'info',title:'提示',text:'請先選擇一個搜尋結果'});
+    }
+}
+
+function openReportModal() {
+    refreshReportCaptcha(); 
+    Swal.fire({
+        title: '回報問題',
+        html: `
+            <textarea id="reportText" class="form-control mb-3" rows="4" placeholder="請描述您遇到的錯誤或建議..."></textarea>
+            <div class="d-flex align-items-center mb-2">
+                <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${currentReportCaptcha}</div>
+                <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="refreshReportCaptcha()"></i>
+            </div>
+            <input type="text" id="reportCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
+        `,
+        showCancelButton: true,
+        confirmButtonText: '送出回報',
+        confirmButtonColor: '#90A4AE',
+        cancelButtonText: '取消',
+        preConfirm: () => {
+            const content = document.getElementById('reportText').value;
+            const inputCaptcha = document.getElementById('reportCaptchaInput').value;
+            
+            if (!content) {
+                Swal.showValidationMessage('請輸入回報內容');
+                return false;
+            }
+            if (inputCaptcha !== currentReportCaptcha) {
+                Swal.showValidationMessage('驗證碼錯誤');
+                return false;
+            }
+            return content;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) sendReport(result.value);
+    });
+}
+
+function refreshReportCaptcha() {
+    currentReportCaptcha = Math.floor(1000 + Math.random()*9000).toString();
+    const display = document.getElementById('reportCaptchaDisplay');
+    if (display) display.innerText = currentReportCaptcha;
+}
+
+function generateCaptcha() {
+    currentCaptcha = Math.floor(1000 + Math.random()*9000).toString();
+    document.getElementById('captchaDisplay').innerText = currentCaptcha;
+    document.getElementById('captchaInput').value = '';
+}
+
+function confirmDelete() {
+    if (document.getElementById('captchaInput').value !== currentCaptcha) { Swal.fire({icon:'error',title:'驗證碼錯誤'}); return; }
+    Swal.fire({title:'確定刪除？',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef9a9a',confirmButtonText:'刪除'})
+    .then((r)=>{ if(r.isConfirmed) deleteEventFromCloud(document.getElementById('eventId').value); });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    UIManager.populateTimeSelects(); 
-    UIManager.renderColorPalette(); 
+    populateTimeSelects(); 
+    renderColorPalette(); 
 
     var calendarEl = document.getElementById('calendar');
     calendar = new FullCalendar.Calendar(calendarEl, {
@@ -1040,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 click: function() {
                     calendar.today();
                     const todayStr = DateEngine.getLocalDateString(new Date().toISOString());
-                    UIManager.jumpToDate(todayStr);
+                    jumpToDate(todayStr);
                 }
             }
         },
@@ -1054,16 +1085,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         navLinks: true,
         navLinkDayClick: function(date, jsEvent) { 
-            UIManager.jumpToDate(date); 
+            jumpToDate(date); 
         },
         
-        events: DataManager.fetchAndSplit, 
+        events: fetchAndSplitEvents, 
 
         eventClick: function(info) {
             if (info.view.type === 'listWeek' || info.view.type === 'list') {
-                UIManager.jumpToDate(info.event.start);
+                jumpToDate(info.event.start);
             } else {
-                UIManager.openEditModal(info.event);
+                openEditModal(info.event);
             }
         },
         eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
@@ -1071,65 +1102,24 @@ document.addEventListener('DOMContentLoaded', function() {
     calendar.render();
 });
 
-// 全域綁定
-function filterHistoryResult() { UIManager.filterHistoryResult(); }
-function jumpToSelectedEvent() { 
-    const val = document.getElementById('searchResult').value;
-    if(val) {
-        UIManager.jumpToDate(val); 
-    } else {
-        Swal.fire({icon:'info',title:'提示',text:'請先選擇一個搜尋結果'});
-    }
-}
-function jumpToDate(str) {
-    UIManager.jumpToDate(str); 
-}
-function toggleFormFields() { UIManager.toggleFormFields(); }
-function syncDates() {
-    const s = document.getElementById('startDate'), e = document.getElementById('endDate');
-    if(!e.value || e.value < s.value) e.value = s.value;
-}
-function syncTimes() {
-    const s = document.getElementById('startTime'), e = document.getElementById('endTime');
-    const sDate = document.getElementById('startDate').value;
-    const eDate = document.getElementById('endDate').value;
-    
-    if (sDate === eDate) {
-        if(e.value < s.value) e.value = s.value;
-    }
-}
-function selectColor(el, color) { selectColor.call(this, el, color); } 
-window.selectColor = function(element, color) {
-    UIManager.selectSwatchByColor(color);
-}
-
-function openAddModal() { UIManager.openAddModal(); }
-function openReportModal() { UIManager.openReportModal(); }
-function generateCaptcha() { UIManager.generateCaptcha(); }
-function confirmDelete() {
-    if (document.getElementById('captchaInput').value !== UIManager.currentCaptcha) { Swal.fire({icon:'error',title:'驗證碼錯誤'}); return; }
-    Swal.fire({title:'確定刪除？',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef9a9a',confirmButtonText:'刪除'})
-    .then((r)=>{ if(r.isConfirmed) DataManager.delete(document.getElementById('eventId').value); });
-}
-
 document.getElementById('eventForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    if (document.getElementById('captchaInput').value !== UIManager.currentCaptcha) {
+    if (document.getElementById('captchaInput').value !== currentCaptcha) {
         Swal.fire({ icon: 'error', title: '驗證碼錯誤' }); return;
     }
     
     // 自動加入連結防呆
     const pendingName = document.getElementById('linkName').value.trim();
     const pendingUrl = document.getElementById('linkUrl').value.trim();
-    if (pendingName && pendingUrl && UIManager.currentLinks.length < 3) {
-        UIManager.addLinkToLocal();
+    if (pendingName && pendingUrl && currentLinks.length < 3) {
+        addLinkToLocal();
     }
 
     const id = document.getElementById('eventId').value;
     const type = document.getElementById('eventType').value;
     const sDate = document.getElementById('startDate').value; 
     const eDate = document.getElementById('endDate').value;   
-    const linkJson = JSON.stringify(UIManager.currentLinks);
+    const linkJson = JSON.stringify(currentLinks);
     
     let startStr, endStr;
     if (type === 'activity') {
@@ -1156,7 +1146,7 @@ document.getElementById('eventForm').addEventListener('submit', function(e) {
         linkName: 'MultiLinks', 
         linkUrl: linkJson       
     };
-    DataManager.save(eventData, id?'update':'create');
+    saveEventToCloud(eventData, id?'update':'create');
 });
 </script>
 </body>
