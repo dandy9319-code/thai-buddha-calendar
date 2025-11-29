@@ -1,4 +1,4 @@
-<!-- v2.8 | Fix Overlap & Mobile Empty Cells Bug | 2025-09-30 -->
+<!-- v2.10 | Fix Date Sync Logic (Auto-set End Date) | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.8
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.10
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -100,24 +100,9 @@
         .fc-toolbar-title { font-size: 1.4rem !important; color: var(--text-primary); font-weight: 700; }
 
         /* --------------------------------------
-           [v2.8] 事件與格子樣式修正
+           事件與格子樣式 (v2.9 Logic)
            -------------------------------------- */
         
-        /* [v2.8] 通用 More Link 樣式 (絕對定位底層) */
-        .fc-daygrid-more-link {
-            position: absolute !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            z-index: 10 !important; /* 確保在最上層 */
-            background-color: var(--card-bg) !important; /* 實心背景 */
-            margin: 0 !important;
-            display: block !important;
-            width: 100%;
-            text-align: center;
-            border-top: 1px solid rgba(0,0,0,0.03);
-        }
-
         /* 1. 電腦版設定 */
         @media (min-width: 768px) {
             .fc-daygrid-day-frame {
@@ -126,31 +111,28 @@
                 max-height: 120px !important;
                 overflow: hidden; 
                 position: relative; 
-                /* 預留空間給底部連結 */
-                padding-bottom: 22px !important; 
-            }
-            
-            /* 電腦版連結高度 */
-            .fc-daygrid-more-link {
-                height: 22px !important;
-                line-height: 22px !important;
             }
         }
 
-        /* 2. 手機版設定 (< 768px) */
+        /* 2. 手機版設定 */
         @media (max-width: 767.98px) {
             .fc-daygrid-day-frame { 
+                /* 高度由 JS 動態控制 */
                 overflow: hidden; 
                 position: relative;
-                /* [v2.8] 縮小預留空間，避免吃掉太多活動顯示空間 */
-                padding-bottom: 18px !important; 
             } 
-            
-            /* [v2.8] 手機版連結更小更緊湊 */
-            .fc-daygrid-more-link {
-                height: 18px !important;
-                line-height: 18px !important;
-            }
+        }
+
+        /* 自然流排版，接在內容後面 */
+        .fc-daygrid-more-link {
+            position: relative !important; 
+            display: block !important;
+            width: 100%;
+            text-align: center;
+            margin-top: 1px !important;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.6); 
+            border-radius: 4px;
         }
 
         /* 事件膠囊 */
@@ -238,7 +220,6 @@
                 line-height: 1.1 !important;
             }
             
-            /* More link text smaller on mobile */
             .fc-more-link { font-size: 0.7rem; margin-top: 0; }
 
             .dashboard-card { border: none; padding: 15px; margin: 0; border-radius: 0; border-top: 1px solid #eee; }
@@ -468,7 +449,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.8
+// 🏗️ 系統架構 (System Architecture) - v2.10
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -1151,7 +1132,7 @@ class App {
             // 1. Remove forced height (let it be 'auto' so CSS min-height works)
             // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', 3); // [v2.8] Limit to 3 to ensure space for footer
+            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
         } else {
             // Mobile: 
             // 1. Calculate available height to fill screen
@@ -1270,6 +1251,13 @@ window.syncTimes = () => {
 };
 window.toggleFormFields = () => app.ui.toggleFormFields();
 window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
+
+// [v2.10] Fix syncDates to allow immediate end date update
+window.syncDates = () => {
+    const s = document.getElementById('startDate').value;
+    const e = document.getElementById('endDate');
+    e.value = s;
+};
 
 </script>
 </body>
