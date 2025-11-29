@@ -1,9 +1,8 @@
-<!-- 版本編號: v1.2 (基於穩定版 v1.0 修復：防崩潰、RWD優化、連結管理、樣式還原) -->
+<!-- v1.2 | RWD Enhancement & UI Polish | 2025-09-29 | Mobile Optimized -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- RWD 關鍵設定 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>泰國佛堂_共用行事曆</title>
     
@@ -16,24 +15,19 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales-all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://npmcdn.com/flatpickr/dist/l10n/zh-tw.js"></script>
-
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style)
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.2 RWD Update
            ========================================= */
-        
         :root {
-            --bg-color: #FDFCF5;       
+            --bg-color: #FDFCF5;        
             --card-bg: #FFFFFF;        
-            --text-primary: #5D4037;   
+            --text-primary: #5D4037;    
             --text-secondary: #8D6E63; 
-            --border-color: #EFEBE9;   
-            --accent-color: #8D6E63;   
-            --primary-action: #a3daff; 
-            --border-radius: 10px;     
+            --border-color: #EFEBE9;    
+            --accent-color: #8D6E63;    /* 暖褐色 (一般按鈕) */
+            --primary-action: #a3daff; /* 亮藍色 (新增按鈕) */
+            --border-radius: 10px;      
         }
 
         body { 
@@ -42,7 +36,7 @@
             color: var(--text-primary);
         }
         
-        .container { max-width: 1200px; margin-top: 40px; margin-bottom: 80px; }
+        .container { max-width: 1200px; margin-top: 40px; margin-bottom: 40px; }
         
         h2 { 
             font-weight: 700; 
@@ -62,93 +56,209 @@
             border: 1px solid var(--border-color);
         }
 
-        /* --- RWD 響應式高度控制 --- */
-        /* 電腦版：固定高度 150px (5行) */
+        /* --- RWD 高度與排版控制 (重點修改) --- */
+        /* 電腦版 */
         @media (min-width: 768px) {
             .fc-daygrid-day-frame {
-                height: 150px !important; 
-                min-height: 150px !important;
-                max-height: 150px !important;
+                height: 130px !important; 
+                min-height: 130px !important;
+                max-height: 130px !important;
                 overflow: hidden;
+                position: relative; 
             }
         }
-        /* 手機版：自動高度，標題換行 */
+        
+        /* 手機版適配 (< 768px) */
         @media (max-width: 767.98px) {
+            .container { margin-top: 20px; padding-left: 10px; padding-right: 10px; }
+            
+            h2 { font-size: 1.4rem; }
+            
+            #calendar { padding: 10px; }
+            
+            /* 強制格子高度自動化，適應內容 */
             .fc-daygrid-day-frame {
                 height: auto !important; 
                 min-height: 80px !important;
+                padding-bottom: 5px; /* 增加底部緩衝 */
             }
-            .fc-header-toolbar { flex-direction: column; gap: 10px; }
-            .modal-dialog { margin: 10px auto !important; max-width: 95% !important; }
             
-            /* 手機版字體微縮 */
-            .fc-event { font-size: 0.75rem !important; }
+            /* 工具列自動換行 */
+            .fc-header-toolbar { 
+                flex-wrap: wrap; 
+                gap: 10px; 
+                margin-bottom: 15px !important;
+            }
+            .fc-toolbar-chunk { 
+                flex: 1 1 auto; 
+                display: flex; 
+                justify-content: center; 
+            }
+            .fc-toolbar-title { font-size: 1.2rem !important; margin: 0 5px !important; }
+            
+            /* 按鈕大小調整 */
+            .fc-button { padding: 4px 8px !important; font-size: 0.85rem !important; }
+            .btn-custom-add { padding: 8px 15px; font-size: 0.9rem; }
+            
+            /* Modal 全寬 */
+            .modal-dialog { margin: 0.5rem; max-width: none; }
         }
 
-        /* 壓縮日期欄位 & 移除底線 */
-        .fc-daygrid-day-top { flex-direction: row; padding: 1px 4px !important; height: 24px !important; min-height: 24px !important; }
-        .fc-daygrid-day-number { font-size: 0.9rem; line-height: 1; margin: 0 !important; text-decoration: none !important; color: var(--text-secondary); }
-        a.fc-col-header-cell-cushion { text-decoration: none !important; color: var(--text-primary); }
-        a:hover { text-decoration: none !important; }
+        /* 壓縮日期欄位 */
+        .fc-daygrid-day-top {
+            flex-direction: row;
+            padding: 1px 4px !important; 
+            height: 24px !important;      
+            min-height: 24px !important;
+        }
+        .fc-daygrid-day-number {
+            font-size: 0.9rem;
+            line-height: 1; 
+            margin: 0 !important;
+        }
+
+        /* 移除日期連結底線 */
+        a.fc-col-header-cell-cushion, 
+        a.fc-daygrid-day-number {
+            text-decoration: none !important;
+            color: var(--text-secondary) !important;
+            cursor: pointer; 
+        }
+        a.fc-col-header-cell-cushion:hover, 
+        a.fc-daygrid-day-number:hover {
+            text-decoration: none !important; 
+            color: var(--text-primary) !important;
+        }
 
         /* 搜尋跳轉的高亮動畫 */
         @keyframes flash-highlight {
             0% { background-color: rgba(255, 235, 59, 0.8); box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.6); }
             100% { background-color: transparent; box-shadow: none; }
         }
-        .highlight-target-day { animation: flash-highlight 2.5s ease-out; position: relative; z-index: 10; }
+        .highlight-target-day {
+            animation: flash-highlight 2.5s ease-out;
+            position: relative;
+            z-index: 10; 
+        }
         
         /* --- 事件樣式 --- */
         .fc-event { 
             cursor: pointer; border: none !important; 
             box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
-            font-size: 0.8rem; margin-bottom: 1px !important; border-radius: 4px !important; 
-            padding: 1px 6px !important; line-height: 1.3 !important;   
+            font-size: 0.8rem; 
+            margin-bottom: 1px !important; 
+            border-radius: 4px !important; 
+            padding: 1px 6px !important;    
+            line-height: 1.3 !important;    
         }
         .fc-event:hover { transform: translateY(-1px); filter: brightness(0.95); z-index: 5; }
         
-        /* 人員樣式 (膠囊) */
         .person-pill { 
-            display: inline-block !important; width: auto !important; 
-            margin-right: 4px !important; white-space: nowrap; 
-            font-weight: 500; color: #5D4037 !important;
+            display: inline-block !important; 
+            width: auto !important; 
+            margin-right: 4px !important; 
+            white-space: nowrap; 
+            font-weight: 500;
+            color: #5D4037 !important;
+            background-color: var(--event-color, #eee); 
         }
         
-        /* 活動樣式 (置頂滿版) */
         .event-type-activity { 
-            background-color: #F8BBD0; border-left: 4px solid #EC407A !important; 
-            color: #5D4037 !important; font-weight: bold; width: 100% !important; 
-            display: block !important; margin-bottom: 2px !important; 
+            background-color: #F8BBD0; 
+            border-left: 4px solid #EC407A !important; 
+            color: #5D4037 !important; 
+            font-weight: bold; 
+            width: 100% !important; 
+            display: block !important;
+            margin-bottom: 2px !important; 
         }
         
         .hide-time-text .fc-event-time { display: none !important; }
-        .fc-daygrid-day-events { margin-top: 0 !important; padding: 0 2px !important; display: flex; flex-wrap: wrap; gap: 1px; }
+
+        .fc-daygrid-day-events { 
+            display: flex !important; flex-wrap: wrap !important; 
+            align-content: flex-start !important; 
+            gap: 1px !important; 
+            padding: 0 2px !important; 
+            margin-top: 0 !important;  
+        }
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
         .fc-daygrid-event-harness:has(.event-type-activity) { width: 100% !important; flex-basis: 100% !important; }
 
+        /* UI 元件 */
+        .fc-col-header-cell { background-color: #FFF8E1; padding: 8px 0; border-bottom: 2px solid #FFE0B2; color: var(--text-primary); }
+        
         /* 按鈕樣式 */
         .fc-button-primary {
-            background-color: var(--accent-color) !important; border-color: var(--accent-color) !important;
-            color: #FFFFFF !important; border-radius: 8px !important; font-weight: 500 !important;
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: #FFFFFF !important;
+            border-radius: 8px !important;
+            font-weight: 500 !important;
+            padding: 5px 14px !important;
+            box-shadow: 0 2px 4px rgba(141, 110, 99, 0.2) !important;
+            transition: all 0.2s ease !important;
+            opacity: 0.9;
         }
+        .fc-button-primary:hover { 
+            background-color: #795548 !important; 
+            border-color: #795548 !important;
+            transform: translateY(-1px);
+            opacity: 1;
+        }
+        .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #5D4037 !important; 
+            border-color: #5D4037 !important;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
+        }
+        .fc-button:focus { box-shadow: none !important; }
+
+        /* 新增按鈕 */
         .btn-custom-add { 
-            background-color: var(--primary-action); color: #333; 
-            border-radius: var(--border-radius); padding: 10px 30px; border: none; font-weight: 600;
+            background-color: var(--primary-action); 
+            color: #333; 
+            border-radius: var(--border-radius); 
+            padding: 10px 30px; 
+            border: none; 
             box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); 
+            transition: all 0.2s; 
+            font-weight: 600;
+            letter-spacing: 1px;
         }
-        .btn-custom-add:hover { background-color: #81D4FA; transform: translateY(-2px); }
+        .btn-custom-add:hover { background-color: #81D4FA; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(163, 218, 255, 0.6); color: #333;}
 
-        /* 回報按鈕 */
-        .report-bug-container { position: fixed; bottom: 25px; right: 25px; z-index: 999; }
+        /* 回報按鈕 (修改：非懸浮，頁尾右下) */
+        .report-bug-container { 
+            /* 移除 position: fixed */
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-bottom: 20px;
+            width: 100%;
+        }
         .btn-report-bug {
-            background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.95rem; font-weight: 600;
-            display: flex; align-items: center; gap: 8px; transition: all 0.3s;
+            background-color: #90A4AE; 
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
+            transition: all 0.3s;
         }
-        .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); }
-
+        .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        
         /* 儀表板 */
-        .dashboard-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; height: 100%; box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); }
+        .dashboard-card { 
+            background: #fff; 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--border-radius); 
+            padding: 20px; 
+            height: 100%; 
+            box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); 
+        }
         .card-history { background-color: #FAFAFA; border-top: 5px solid #AED581; }
         .card-upcoming { background-color: #FAFAFA; border-top: 5px solid #FFD54F; }
         .dashboard-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #EFEBE9; }
@@ -156,84 +266,145 @@
         .upcoming-list-container { max-height: 400px; overflow-y: auto; padding-right: 8px; }
         .upcoming-list-container::-webkit-scrollbar { width: 5px; }
         .upcoming-list-container::-webkit-scrollbar-thumb { background-color: #D7CCC8; border-radius: 10px; }
-
+        
         .dashboard-btn { border: none; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(141, 110, 99, 0.1); transition: 0.2s; position: relative; border-radius: 6px; }
         .dashboard-btn:hover { transform: translateY(-1px); opacity: 0.95; }
+        
         .btn-act { width: 100%; text-align: left; padding: 8px 15px; margin-bottom: 8px; }
         .btn-person { display: inline-block; width: auto; padding: 6px 12px; margin-right: 6px; margin-bottom: 8px; border-radius: 15px; font-size: 0.85rem; font-weight: 500; }
-        .section-label { font-size: 0.85rem; color: #A1887F; margin-top: 10px; margin-bottom: 5px; font-weight: 700; border-left: 3px solid #D7CCC8; padding-left: 8px; }
+        
+        .section-label { font-size: 0.85rem; color: #A1887F; margin-top: 10px; margin-bottom: 5px; font-weight: 700; letter-spacing: 1px; border-left: 3px solid #D7CCC8; padding-left: 8px; }
 
-        /* 色票與輸入 */
         .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-block; }
+        .color-swatch:hover { transform: scale(1.15); }
         .color-swatch.selected { border-color: #8D6E63; transform: scale(1.1); box-shadow: 0 0 0 2px #D7CCC8; }
         
+        /* Modal & Link Styles */
         .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(141, 110, 99, 0.15); }
         .modal-header { background-color: #FFF8E1; border-radius: 15px 15px 0 0; border-bottom: 1px solid #FFE0B2; }
         .modal-title { color: #5D4037; font-weight: bold; letter-spacing: 1px; }
-        .captcha-box { background: #FFF3E0; color: #5D4037; font-size: 24px; font-weight: bold; padding: 8px; border-radius: 10px; text-align: center; border: 2px dashed #FFCC80; }
-        .refresh-icon { cursor: pointer; color: #BCAAA4; transition: 0.3s; font-size: 1.2rem; margin-left: 15px; }
-        
-        /* 連結管理區塊 */
+        .captcha-box { background: #FFF3E0; color: #5D4037; font-size: 24px; font-weight: bold; letter-spacing: 6px; text-align: center; padding: 8px; border-radius: var(--border-radius); user-select: none; border: 2px dashed #FFCC80; }
+        .refresh-icon { cursor: pointer; color: #BCAAA4; transition: 0.3s; font-size: 1.2rem; margin-left: 15px; margin-top: 5px; }
+        .refresh-icon:hover { color: #8D6E63; transform: rotate(180deg); }
+
+        /* 已完成活動區塊 */
         #completedSection { background-color: #F1F8E9; border: 1px solid #C5E1A5; border-radius: 12px; margin-bottom: 20px; }
         .completed-badge { color: #558B2F; font-weight: bold; font-size: 0.95rem; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+        .input-link { background-color: #fff !important; }
+        
+        /* 上方輸入區 */
         #addLinkContainer { padding-bottom: 15px; border-bottom: 1px dashed #C5E1A5; margin-bottom: 10px; }
+        
+        /* 下方已存連結區 */
         #savedLinksContainer h6 { color: #33691E; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; }
-        .saved-link-item { background-color: #FFFFFF; border: 1px solid #AED581; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .saved-link-item {
+            background-color: #FFFFFF;
+            border: 1px solid #AED581;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+        .saved-link-info { flex-grow: 1; overflow: hidden; }
         .saved-link-name { font-weight: bold; color: #558B2F; font-size: 0.9rem; display: block; }
         .saved-link-url { color: #0277BD; font-size: 0.85rem; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .saved-link-url:hover { text-decoration: underline; }
         .link-safety-badge { font-size: 0.75rem; margin-left: 5px; padding: 1px 5px; border-radius: 4px; vertical-align: middle; }
         .badge-safe { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
         .badge-unsafe { background-color: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; }
-        .input-link { background-color: #fff !important; }
-        
-        .time-input-style { background-color: #fff; cursor: pointer; }
+
+        /* 儲存按鈕 (浮動) */
+        .btn-save-modal {
+            background-color: var(--primary-action);
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(79, 195, 247, 0.3);
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .btn-save-modal:hover {
+            background-color: #29B6F6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(79, 195, 247, 0.5);
+            color: #333;
+        }
+
+        /* 刪除按鈕 (白字) */
+        .btn-delete-modal {
+            border: 1px solid #ef9a9a;
+            color: #d32f2f;
+            background-color: transparent;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .btn-delete-modal:hover {
+            background-color: #ef9a9a;
+            color: white !important; 
+            box-shadow: 0 3px 8px rgba(239, 154, 154, 0.4);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h2><i class="fa-solid fa-calendar-days me-2" style="color: #A1887F;"></i>泰國佛堂_共用行事曆</h2>
         <button class="btn btn-custom-add" onclick="openAddModal()">
             <i class="fa-solid fa-plus me-1"></i> 新增資料
         </button>
     </div>
-    <div id="calendar"></div>
     
-    <!-- 儀表板 -->
-    <div class="row g-4 mt-4">
+    <div id="calendar" class="mb-5"></div>
+
+    <div class="row g-4">
         <div class="col-md-6">
             <div class="dashboard-card card-history">
                 <div class="dashboard-title"><i class="fa-solid fa-clock-rotate-left me-2 text-secondary"></i>歷史紀錄查詢</div>
                 <div class="row g-2 mb-3">
-                    <div class="col-6"><select class="form-select form-select-sm" id="searchYear" onchange="filterHistoryResult()"><option>年份</option></select></div>
-                    <div class="col-6"><select class="form-select form-select-sm" id="searchType" onchange="filterHistoryResult()"><option value="all">全部</option><option value="activity">活動</option><option value="person">人員</option></select></div>
+                    <div class="col-6">
+                        <label class="form-label text-muted small">年份</label>
+                        <select class="form-select form-select-sm" id="searchYear" onchange="filterHistoryResult()"><option value="">選擇年份...</option></select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-muted small">類型</label>
+                        <select class="form-select form-select-sm" id="searchType" onchange="filterHistoryResult()"><option value="all">全部</option><option value="activity">活動</option><option value="person">人員參與</option></select>
+                    </div>
                 </div>
-                <div class="mb-3"><select class="form-select" id="searchResult"><option>搜尋結果</option></select></div>
-                <div class="d-grid"><button class="btn btn-secondary btn-sm" onclick="jumpToSelectedEvent()" style="background-color: #8D6E63; border:none;">前往該月份 <i class="fa-solid fa-arrow-right"></i></button></div>
+                <div class="mb-3">
+                    <label class="form-label text-muted small">搜尋結果</label>
+                    <select class="form-select" id="searchResult"><option value="">請先選擇年份與類型...</option></select>
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-secondary btn-sm" onclick="jumpToSelectedEvent()" style="background-color: #8D6E63; border:none; border-radius: 8px;">前往該月份 <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                </div>
             </div>
         </div>
         <div class="col-md-6">
             <div class="dashboard-card card-upcoming">
                 <div class="dashboard-title"><i class="fa-regular fa-calendar-plus me-2 text-secondary"></i>即將到來</div>
-                <div class="upcoming-list-container" id="upcomingList"><div class="text-center text-muted py-3">讀取中...</div></div>
+                <div class="upcoming-list-container" id="upcomingList"><div class="text-center text-muted py-4">讀取中...</div></div>
             </div>
         </div>
     </div>
+
+    <!-- 回報按鈕 (移至底部固定流) -->
+    <div class="report-bug-container">
+        <button class="btn-report-bug" onclick="openReportModal()">
+            <i class="fa-solid fa-bug"></i> 回報問題
+        </button>
+    </div>
 </div>
 
-<!-- 回報按鈕 -->
-<div class="report-bug-container">
-    <button class="btn-report-bug" onclick="openReportModal()">
-        <i class="fa-solid fa-bug"></i> 回報問題
-    </button>
-</div>
-
-<!-- Modal -->
+<!-- Modal 區塊 (邏輯由 UIManager 控制) -->
 <div class="modal fade" id="eventModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTitle">新增資料</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -243,16 +414,23 @@
                     <input type="hidden" id="eventId">
                     <input type="hidden" id="selectedColor">
 
-                    <!-- 已完成活動區塊 -->
                     <div id="completedSection" class="p-3 mb-4" style="display: none;">
                         <div class="completed-badge"><i class="fa-solid fa-circle-check"></i> 活動已完成 - 紀錄分享 <span id="linkCountBadge" class="ms-2 badge rounded-pill bg-secondary" style="font-size:0.7rem;">0/3</span></div>
                         <div id="addLinkContainer">
                             <label class="form-label small text-secondary mb-1 fw-bold"><i class="fa-solid fa-pen"></i> 新增連結</label>
-                            <div class="input-group mb-1"><input type="text" class="form-control input-link" id="linkName" placeholder="名稱"></div>
-                            <div class="input-group"><input type="url" class="form-control input-link" id="linkUrl" placeholder="https://..." oninput="checkUrlSafety(this.value)"><button type="button" class="btn btn-sm btn-success" onclick="addLinkToLocal()"><i class="fa-solid fa-plus"></i> 加入</button></div>
+                            <div class="input-group mb-1">
+                                <input type="text" class="form-control input-link" id="linkName" placeholder="名稱 (如: 相簿)">
+                            </div>
+                            <div class="input-group">
+                                <input type="url" class="form-control input-link" id="linkUrl" placeholder="https://..." oninput="checkUrlSafety(this.value)">
+                                <button type="button" class="btn btn-sm btn-success" onclick="addLinkToLocal()"><i class="fa-solid fa-plus"></i> 加入</button>
+                            </div>
                             <div id="urlSafetyFeedback" class="mt-1"></div>
                         </div>
-                        <div id="savedLinksContainer" style="display:none;"><h6>已存連結列表</h6><div id="savedLinksList"></div></div>
+                        <div id="savedLinksContainer" style="display:none;">
+                            <h6>已存連結列表</h6>
+                            <div id="savedLinksList"></div>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -265,13 +443,13 @@
                     </div>
                     <div class="row mb-3">
                         <label class="form-label text-secondary small fw-bold">開始</label>
-                        <div class="col-7"><input type="text" class="form-control time-input-style" id="startDate" required></div>
-                        <div class="col-5 time-field-group"><input type="text" class="form-control time-input-style" id="startTime" readonly></div>
+                        <div class="col-7"><input type="date" class="form-control" id="startDate" required onchange="syncDates()"></div>
+                        <div class="col-5 time-field-group"><select class="form-select" id="startTime" onchange="syncTimes()"></select></div>
                     </div>
                     <div class="row mb-3">
                         <label class="form-label text-secondary small fw-bold">結束</label>
-                        <div class="col-7"><input type="text" class="form-control time-input-style" id="endDate" required></div>
-                        <div class="col-5 time-field-group"><input type="text" class="form-control time-input-style" id="endTime" readonly></div>
+                        <div class="col-7"><input type="date" class="form-control" id="endDate" required></div>
+                        <div class="col-5 time-field-group"><select class="form-select" id="endTime"></select></div>
                     </div>
 
                     <div class="mb-3" id="colorSection">
@@ -283,14 +461,13 @@
                         <label class="form-label text-secondary small fw-bold">驗證碼</label>
                         <div class="d-flex align-items-center">
                             <div id="captchaDisplay" class="captcha-box flex-grow-1"></div>
-                            <i class="fa-solid fa-arrows-rotate refresh-icon ms-2" onclick="generateCaptcha()"></i>
+                            <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="generateCaptcha()" title="更換驗證碼"></i>
                         </div>
                         <input type="text" class="form-control mt-2" id="captchaInput" placeholder="請輸入上方數字" required>
                     </div>
-
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary" style="background-color: #a3daff; color:#333; border:none; font-weight:600;">儲存資料</button>
-                        <button type="button" id="deleteBtn" class="btn btn-outline-danger mt-2" style="display:none;" onclick="confirmDelete()">刪除此資料</button>
+                        <button type="submit" class="btn btn-save-modal">儲存資料</button>
+                        <button type="button" id="deleteBtn" class="btn btn-delete-modal" style="display:none;" onclick="confirmDelete()">刪除此資料</button>
                     </div>
                 </form>
             </div>
@@ -299,381 +476,776 @@
 </div>
 
 <script>
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec';
-    const ACTIVITY_COLOR = '#F48FB1';
-    const PERSON_COLORS = ['#AED581', '#81D4FA', '#9FA8DA', '#E6EE9C', '#FFCC80', '#B0BEC5', '#BCAAA4', '#80CBC4', '#CE93D8', '#FFF59D', '#90CAF9', '#CFD8DC'];
+// ==========================================
+// 🏗️ 系統架構 (System Architecture) - v1.2
+// ==========================================
 
-    let calendar, currentCaptcha = "", currentReportCaptcha = "", currentLinks = [];
-    let allEventsData = [];
-    let fpStartDate, fpEndDate, fpStartTime, fpEndTime;
-    let isEditingPastActivity = false;
-
-    // --- 日期運算工具 (純字串操作，避免時區問題) ---
-    function getLocalDateString(isoStr) {
-        if(!isoStr) return '';
-        const d = new Date(isoStr);
-        const offset = d.getTimezoneOffset() * 60000;
-        return new Date(d.getTime() - offset).toISOString().split('T')[0];
+// 1. Config: 靜態設定檔
+class Config {
+    static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
+    static get COLOR_ACTIVITY() { return '#F48FB1'; }
+    static get COLORS_PERSON() { 
+        return ['#AED581', '#81D4FA', '#9FA8DA', '#E6EE9C', '#FFCC80', '#B0BEC5', '#BCAAA4', '#80CBC4', '#CE93D8', '#FFF59D', '#90CAF9', '#CFD8DC'];
     }
-    function addDaysToDateString(dateStr, days) {
-        const p = dateStr.split('-');
-        const d = new Date(p[0], p[1]-1, p[2]);
-        d.setDate(d.getDate() + days);
-        const year = d.getFullYear();
-        const month = (d.getMonth()+1).toString().padStart(2,'0');
-        const day = d.getDate().toString().padStart(2,'0');
-        return `${year}-${month}-${day}`;
+}
+
+// 2. DateUtils: 日期工具 (Pure Functions)
+class DateUtils {
+    static getLocalDateString(isoStr) {
+        if (!isoStr) return '';
+        const date = new Date(isoStr);
+        const offset = date.getTimezoneOffset() * 60000;
+        const localDate = new Date(date.getTime() - offset);
+        return localDate.toISOString().split('T')[0];
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        renderColorPalette();
-        
-        const fpConfigDate = { locale: "zh_tw", dateFormat: "Y-m-d", onChange: function(selectedDates, dateStr) { syncDates(dateStr); } };
-        const fpConfigTime = { locale: "zh_tw", enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, minuteIncrement: 15, disableMobile: "true" };
-        
-        fpStartDate = flatpickr("#startDate", fpConfigDate);
-        fpEndDate = flatpickr("#endDate", fpConfigDate);
-        fpStartTime = flatpickr("#startTime", fpConfigTime);
-        fpEndTime = flatpickr("#endTime", fpConfigTime);
+    static addDaysToDateString(dateStr, days) {
+        const parts = dateStr.split('-');
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const tempDate = new Date(y, m, d);
+        tempDate.setDate(tempDate.getDate() + days);
+        const newY = tempDate.getFullYear();
+        const newM = (tempDate.getMonth() + 1).toString().padStart(2, '0');
+        const newD = tempDate.getDate().toString().padStart(2, '0');
+        return `${newY}-${newM}-${newD}`;
+    }
 
-        var calendarEl = document.getElementById('calendar');
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'zh-tw',
-            headerToolbar: { left: 'myToday', center: 'prev,title,next', right: 'dayGridMonth,timeGridWeek,listWeek' },
-            buttonText: { month: '月', week: '週', list: '列表' },
-            customButtons: {
-                myToday: { text: '今天', click: function() { calendar.today(); jumpToDate(new Date().toISOString()); } }
-            },
-            eventDisplay: 'block', contentHeight: 'auto', dayMaxEvents: 4, fixedWeekCount: false,
-            eventOrder: 'typeOrder,start,title',
-            navLinks: true, navLinkDayClick: function(date) { jumpToDate(date); },
-            events: fetchEventsFromGoogleSheet,
-            eventClick: function(info) {
-                if (info.view.type.includes('list')) jumpToDate(info.event.start);
-                else openEditModal(info.event);
-            },
-            eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
+    static getTodayString() {
+        return this.getLocalDateString(new Date().toISOString());
+    }
+}
+
+// 3. APIService: 雲端服務層 (無 UI)
+class APIService {
+    static async fetchEvents() {
+        try {
+            const res = await fetch(Config.API_URL);
+            return await res.json();
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            throw error;
+        }
+    }
+
+    static async saveEvent(data, action) {
+        return fetch(Config.API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: action, ...data })
         });
-        calendar.render();
-    });
-
-    function fetchEventsFromGoogleSheet(info, successCallback, failureCallback) {
-        if(allEventsData.length === 0) Swal.fire({ title: '讀取中...', didOpen: () => Swal.showLoading(), toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
-        
-        fetch(SCRIPT_URL).then(res => res.json()).then(data => {
-            if(data.result && data.result.startsWith("Error")) return;
-            allEventsData = [];
-            let explodedEvents = [];
-            
-            data.forEach(item => {
-                const type = item.type || item.extendedProps?.type || 'person';
-                const isAct = type === 'activity';
-                const itemOrder = isAct ? 1 : 2;
-
-                // 備份原始資料
-                allEventsData.push({
-                    id: item.id, title: item.title, start: item.start, end: item.end,
-                    backgroundColor: item.backgroundColor, textColor: item.textColor,
-                    extendedProps: { type, linkUrl: item.linkUrl || '', linkName: item.linkName || '' },
-                    type: type
-                });
-
-                if (item.start) {
-                    const startDateStr = getLocalDateString(item.start);
-                    let endDateStr = item.end ? getLocalDateString(item.end) : startDateStr;
-                    if (isAct) endDateStr = addDaysToDateString(endDateStr, 1);
-
-                    let currentStr = startDateStr;
-                    let safety = 0;
-                    // 拆解日期，確保每格獨立
-                    while (currentStr < endDateStr) {
-                        if(safety++ > 365) break; // 安全保險
-                        
-                        const classList = ['hide-time-text'];
-                        if (isAct) classList.push('event-type-activity');
-                        else classList.push('person-pill');
-
-                        explodedEvents.push({
-                            id: item.id, title: item.title, start: currentStr, end: currentStr, allDay: true,
-                            backgroundColor: item.backgroundColor, textColor: item.textColor,
-                            extendedProps: { type, typeOrder: itemOrder },
-                            classNames: classList
-                        });
-                        currentStr = addDaysToDateString(currentStr, 1);
-                    }
-                }
-            });
-            renderDashboard();
-            successCallback(explodedEvents);
-            Swal.close();
-        }).catch(err => failureCallback(err));
     }
 
-    // --- 連結管理 ---
-    function addLinkToLocal() {
-        if (currentLinks.length >= 3) { Swal.fire('限制', '最多3個連結', 'warning'); return; }
-        const name = document.getElementById('linkName').value.trim();
-        const url = document.getElementById('linkUrl').value.trim();
-        if (!name || !url) { Swal.fire('請輸入資料', '', 'warning'); return; }
-        currentLinks.push({ name, url });
-        renderLinkList();
+    static async deleteEvent(id) {
+        return fetch(Config.API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'delete', id: id })
+        });
+    }
+
+    static async sendReport(content) {
+        return fetch(Config.API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({ action: 'send_report', content: content })
+        });
+    }
+}
+
+// 4. CaptchaSystem: 驗證碼系統
+class CaptchaSystem {
+    constructor(displayId, inputId) {
+        this.displayEl = document.getElementById(displayId);
+        this.inputEl = document.getElementById(inputId);
+        this.currentCode = "";
+    }
+
+    generate() {
+        this.currentCode = Math.floor(1000 + Math.random() * 9000).toString();
+        if (this.displayEl) this.displayEl.innerText = this.currentCode;
+        if (this.inputEl) this.inputEl.value = '';
+        return this.currentCode;
+    }
+
+    validate() {
+        if (!this.inputEl) return false;
+        return this.inputEl.value === this.currentCode;
+    }
+}
+
+// 5. LinkManager: 連結管理邏輯
+class LinkManager {
+    constructor() {
+        this.links = [];
+        this.maxLinks = 3;
+    }
+
+    setLinks(links) {
+        this.links = Array.isArray(links) ? links : [];
+    }
+
+    addLink(name, url) {
+        if (this.links.length >= this.maxLinks) throw new Error('數量限制：最多 3 個連結');
+        if (!name || !url) throw new Error('請輸入名稱與網址');
+        this.links.push({ name, url });
+    }
+
+    removeLink(index) {
+        if (index >= 0 && index < this.links.length) {
+            this.links.splice(index, 1);
+        }
+    }
+
+    getLinks() { return this.links; }
+    getJson() { return JSON.stringify(this.links); }
+    
+    static checkSafety(url) {
+        try {
+            const u = new URL(url);
+            return u.protocol === 'https:';
+        } catch { return false; }
+    }
+}
+
+// 6. EventManager: 資料邏輯層
+class EventManager {
+    constructor() {
+        this.allEvents = [];
+    }
+
+    setEvents(rawData) {
+        this.allEvents = [];
+        if (rawData.result && rawData.result.startsWith("Error")) return [];
+        
+        rawData.forEach(item => {
+            const type = item.type || (item.extendedProps && item.extendedProps.type) || 'person';
+            const isActivity = (type === 'activity');
+            const itemOrder = isActivity ? -1 : 10;
+            
+            this.allEvents.push({
+                id: item.id,
+                title: item.title,
+                start: item.start,
+                end: item.end,
+                backgroundColor: item.backgroundColor,
+                textColor: item.textColor,
+                extendedProps: {
+                    type: type,
+                    order: itemOrder,
+                    linkName: item.linkName || '',
+                    linkUrl: item.linkUrl || ''
+                },
+                order: itemOrder,
+                type: type
+            });
+        });
+    }
+
+    // 將資料 "炸開" 成 FullCalendar 顯示用的格式 (v1.0 邏輯移植)
+    getExplodedEvents() {
+        let exploded = [];
+        this.allEvents.forEach(item => {
+            if (!item.start) return;
+
+            const isActivity = (item.type === 'activity');
+            const startDateStr = DateUtils.getLocalDateString(item.start);
+            let endDateStr = item.end ? DateUtils.getLocalDateString(item.end) : startDateStr;
+
+            if (isActivity) endDateStr = DateUtils.addDaysToDateString(endDateStr, 1);
+
+            let currentStr = startDateStr;
+            let safetyLoop = 0;
+            const originalStartTimestamp = new Date(item.start).getTime();
+
+            while (currentStr < endDateStr) {
+                if (safetyLoop++ > 365) break;
+
+                const classList = ['hide-time-text'];
+                if (isActivity) classList.push('event-type-activity');
+                else classList.push('person-pill');
+
+                exploded.push({
+                    id: item.id,
+                    title: item.title,
+                    start: currentStr,
+                    end: currentStr,
+                    allDay: true,
+                    backgroundColor: item.backgroundColor,
+                    textColor: item.textColor,
+                    extendedProps: item.extendedProps,
+                    originalStart: originalStartTimestamp,
+                    order: item.extendedProps.order,
+                    classNames: classList
+                });
+                currentStr = DateUtils.addDaysToDateString(currentStr, 1);
+            }
+        });
+        return exploded;
+    }
+
+    getUpcomingEvents() {
+        const todayStr = DateUtils.getTodayString();
+        return this.allEvents.filter(e => DateUtils.getLocalDateString(e.start) >= todayStr);
+    }
+
+    getHistoryEvents(year, type) {
+        const todayStr = DateUtils.getTodayString();
+        return this.allEvents.filter(e => {
+            const dateStr = DateUtils.getLocalDateString(e.start);
+            const y = dateStr.substring(0, 4);
+            const eType = e.type || 'person';
+            return y === year && (type === 'all' || eType === type) && (dateStr < todayStr);
+        }).sort((a, b) => new Date(a.start) - new Date(b.start));
+    }
+
+    getYearsList() {
+        const years = new Set(this.allEvents.map(e => DateUtils.getLocalDateString(e.start).substring(0, 4)));
+        return Array.from(years).sort((a, b) => b - a);
+    }
+
+    findEventById(id) {
+        return this.allEvents.find(e => e.id === id);
+    }
+}
+
+// 7. UIManager: 介面總管
+class UIManager {
+    constructor(app) {
+        this.app = app;
+        this.linkManager = new LinkManager();
+        this.mainCaptcha = new CaptchaSystem('captchaDisplay', 'captchaInput');
+        this.reportCaptcha = new CaptchaSystem('reportCaptchaDisplay', 'reportCaptchaInput');
+        this.deleteLinkCaptcha = new CaptchaSystem('reportCaptchaDisplay', 'deleteLinkCaptchaInput'); 
+        
+        this.isEditingPastActivity = false;
+        
+        // Modal & Forms
+        this.modalEl = new bootstrap.Modal(document.getElementById('eventModal'));
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        document.getElementById('eventForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
+        
+        // 渲染顏色選擇器
+        const palette = document.getElementById('colorPalette');
+        let html = '';
+        Config.COLORS_PERSON.forEach((color, index) => {
+            html += `<div class="color-swatch" style="background-color: ${color};" data-color="${color}" onclick="app.ui.selectColor('${color}')"></div>`;
+        });
+        palette.innerHTML = html;
+    }
+
+    // --- Dashboard UI ---
+    renderDashboard() {
+        const upcoming = this.app.eventManager.getUpcomingEvents();
+        const listContainer = document.getElementById('upcomingList');
+        
+        if (upcoming.length === 0) {
+            listContainer.innerHTML = '<div class="text-center text-muted py-4 small">近期無活動</div>';
+        } else {
+            const activities = upcoming.filter(e => e.type === 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
+            const people = upcoming.filter(e => e.type !== 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
+            
+            let html = '';
+            if (activities.length > 0) {
+                html += `<div class="section-label">近期活動</div>`;
+                activities.forEach(e => {
+                    const d = DateUtils.getLocalDateString(e.start);
+                    const t = e.start.substring(11, 16);
+                    html += `<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')"><div class="d-flex justify-content-between"><strong>${e.title}</strong><small>${d} ${t}</small></div></button>`;
+                });
+            }
+            if (people.length > 0) {
+                html += `<div class="section-label">近期參與人員</div><div class="d-block">`;
+                people.forEach(e => {
+                    const d = DateUtils.getLocalDateString(e.start);
+                    html += `<button class="btn dashboard-btn btn-person" style="background:${e.backgroundColor};color:#333;" onclick="jumpToDate('${e.start}')">${d} ${e.title}</button>`;
+                });
+                html += `</div>`;
+            }
+            listContainer.innerHTML = html;
+        }
+        
+        // 渲染年份下拉選單
+        const years = this.app.eventManager.getYearsList();
+        const sel = document.getElementById('searchYear');
+        sel.innerHTML = '<option value="">選擇年份...</option>';
+        years.forEach(y => sel.innerHTML += `<option value="${y}">${y}年</option>`);
+    }
+
+    renderHistoryResult() {
+        const yVal = document.getElementById('searchYear').value;
+        const tVal = document.getElementById('searchType').value;
+        const resSel = document.getElementById('searchResult');
+        resSel.innerHTML = '<option value="">請選擇...</option>';
+        if(!yVal) return;
+
+        const results = this.app.eventManager.getHistoryEvents(yVal, tVal);
+        if(results.length === 0) { resSel.innerHTML = '<option value="">查無資料</option>'; return; }
+        
+        results.forEach(e => {
+            const d = DateUtils.getLocalDateString(e.start);
+            resSel.innerHTML += `<option value="${e.start}">${d} - ${e.title}</option>`;
+        });
+    }
+
+    // --- Modal Logic ---
+    openAddModal() {
+        document.getElementById('eventForm').reset();
+        document.getElementById('eventId').value = '';
+        document.getElementById('modalTitle').innerText = '新增資料';
+        document.getElementById('deleteBtn').style.display = 'none';
+        
+        this.isEditingPastActivity = false;
+        this.linkManager.setLinks([]);
+        document.getElementById('completedSection').style.display = 'none';
+        document.getElementById('urlSafetyFeedback').innerHTML = '';
+
+        // 日期預設
+        const currentDate = this.app.calendar.getDate();
+        const today = new Date();
+        let targetDate = (currentDate.getMonth() === today.getMonth()) ? today : currentDate;
+        const dStr = DateUtils.getLocalDateString(targetDate.toISOString());
+        
+        document.getElementById('startDate').value = dStr;
+        document.getElementById('endDate').value = dStr;
+        
+        // 時間預設 (最近的15分)
+        const r = 15 - (new Date().getMinutes() % 15);
+        const now = new Date(); now.setMinutes(now.getMinutes() + r);
+        const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+        document.getElementById('startTime').value = t; 
+        document.getElementById('endTime').value = t;
+
+        this.mainCaptcha.generate();
+        document.getElementById('selectedColor').value = ''; // Reset
+        this.toggleFormFields();
+        this.modalEl.show();
+    }
+
+    openEditModal(fcEvent) {
+        const e = this.app.eventManager.findEventById(fcEvent.id) || fcEvent;
+        const props = e.extendedProps || {};
+        const type = props.type || 'person';
+
+        document.getElementById('eventId').value = e.id;
+        document.getElementById('modalTitle').innerText = '編輯資料';
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('eventType').value = type;
+        document.getElementById('eventTitle').value = e.title;
+
+        // 恢復顏色
+        if(e.backgroundColor) this.selectColor(e.backgroundColor);
+
+        // 判斷是否為過去活動
+        const todayStr = DateUtils.getTodayString();
+        this.isEditingPastActivity = false;
+        if (e.start && type === 'activity') {
+            const endStr = e.end ? DateUtils.getLocalDateString(e.end) : DateUtils.getLocalDateString(e.start);
+            if (endStr <= todayStr) this.isEditingPastActivity = true;
+        }
+
+        // 連結處理
+        try {
+            this.linkManager.setLinks(JSON.parse(props.linkUrl || '[]'));
+        } catch {
+            if(props.linkUrl && !props.linkUrl.startsWith('[')) {
+                this.linkManager.setLinks([{name: props.linkName || '連結', url: props.linkUrl}]);
+            } else {
+                this.linkManager.setLinks([]);
+            }
+        }
         document.getElementById('linkName').value = '';
         document.getElementById('linkUrl').value = '';
         document.getElementById('urlSafetyFeedback').innerHTML = '';
+
+        this.toggleFormFields(); 
+
+        // 填充時間
+        if(e.start) {
+            const sStr = DateUtils.getLocalDateString(e.start);
+            document.getElementById('startDate').value = sStr;
+            if (type === 'person') {
+                const eStrRaw = e.end ? DateUtils.getLocalDateString(e.end) : sStr;
+                const correctEnd = DateUtils.addDaysToDateString(eStrRaw, -1);
+                document.getElementById('endDate').value = correctEnd;
+            } else {
+                document.getElementById('startTime').value = e.start.substring(11, 16);
+                if(e.end) {
+                    document.getElementById('endDate').value = DateUtils.getLocalDateString(e.end);
+                    document.getElementById('endTime').value = e.end.substring(11, 16);
+                }
+            }
+        }
+
+        this.mainCaptcha.generate();
+        this.modalEl.show();
     }
 
-    function renderLinkList() {
-        const list = document.getElementById('savedLinksList');
-        const container = document.getElementById('savedLinksContainer');
-        const badge = document.getElementById('linkCountBadge');
-        list.innerHTML = '';
-        badge.innerText = `${currentLinks.length}/3`;
+    toggleFormFields() {
+        const type = document.getElementById('eventType').value;
+        const colorSection = document.getElementById('colorSection');
+        const completedSection = document.getElementById('completedSection');
         
-        if (currentLinks.length === 0) { container.style.display = 'none'; return; }
-        container.style.display = 'block';
+        document.getElementById('nameLabel').innerText = type === 'activity' ? '活動名稱' : '參與人姓名';
+        document.querySelectorAll('.time-field-group').forEach(el => el.style.display = type === 'activity' ? 'block' : 'none');
 
-        currentLinks.forEach((link, index) => {
-            let badgeHtml = '';
-            try {
-                const u = new URL(link.url);
-                badgeHtml = u.protocol === 'https:' ? '<span class="link-safety-badge badge-safe"><i class="fa-solid fa-lock"></i> 安全</span>' : '<span class="link-safety-badge badge-unsafe">不安全</span>';
-            } catch(e) { badgeHtml = '<span class="link-safety-badge badge-unsafe">格式錯誤</span>'; }
+        if (type === 'activity') {
+            colorSection.style.display = 'none';
+            document.getElementById('selectedColor').value = Config.COLOR_ACTIVITY;
+            
+            if (this.isEditingPastActivity) {
+                completedSection.style.display = 'block';
+                this.renderLinkList();
+            } else {
+                completedSection.style.display = 'none';
+            }
+        } else {
+            colorSection.style.display = 'block';
+            completedSection.style.display = 'none';
+            
+            // 恢復上次選擇的顏色 (僅新增時)
+            if (!document.getElementById('eventId').value) {
+                const lastColor = localStorage.getItem('lastPersonColor');
+                const defaultColor = (lastColor && Config.COLORS_PERSON.includes(lastColor)) ? lastColor : Config.COLORS_PERSON[0];
+                this.selectColor(defaultColor);
+            }
+        }
+    }
 
-            list.insertAdjacentHTML('beforeend', `
+    selectColor(color) {
+        document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
+        const swatch = document.querySelector(`.color-swatch[data-color="${color}"]`);
+        if (swatch) swatch.classList.add('selected');
+        document.getElementById('selectedColor').value = color;
+    }
+
+    // --- Links Logic ---
+    addLink() {
+        try {
+            const name = document.getElementById('linkName').value.trim();
+            const url = document.getElementById('linkUrl').value.trim();
+            this.linkManager.addLink(name, url);
+            this.renderLinkList();
+            document.getElementById('linkName').value = '';
+            document.getElementById('linkUrl').value = '';
+            document.getElementById('urlSafetyFeedback').innerHTML = '';
+        } catch (e) {
+            Swal.fire('提示', e.message, 'warning');
+        }
+    }
+
+    renderLinkList() {
+        const list = document.getElementById('savedLinksList');
+        const badge = document.getElementById('linkCountBadge');
+        const links = this.linkManager.getLinks();
+        
+        badge.innerText = `${links.length}/3`;
+        document.getElementById('savedLinksContainer').style.display = links.length ? 'block' : 'none';
+        list.innerHTML = '';
+
+        links.forEach((link, index) => {
+            const isSafe = LinkManager.checkSafety(link.url);
+            const badgeHtml = isSafe 
+                ? '<span class="link-safety-badge badge-safe"><i class="fa-solid fa-lock"></i> 安全</span>'
+                : '<span class="link-safety-badge badge-unsafe"><i class="fa-solid fa-unlock"></i> 不安全</span>';
+            
+            const html = `
                 <div class="saved-link-item">
                     <div class="saved-link-info">
                         <span class="saved-link-name">${link.name}</span>
                         <div><a href="${link.url}" target="_blank" class="saved-link-url">${link.url}</a>${badgeHtml}</div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="openDeleteLinkCaptchaModal(${index})"><i class="fa-solid fa-trash"></i></button>
-                </div>`);
+                    <button type="button" class="btn btn-sm btn-outline-danger border-0 ms-2" onclick="app.ui.openDeleteLinkModal(${index})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>`;
+            list.insertAdjacentHTML('beforeend', html);
         });
     }
 
-    function openDeleteLinkCaptchaModal(index) {
-        refreshReportCaptcha();
-        Swal.fire({
-            title: '刪除連結確認',
-            html: `<div class="d-flex align-items-center mb-2"><div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${currentReportCaptcha}</div></div><input type="text" id="delLinkInput" class="form-control" placeholder="輸入驗證碼">`,
-            showCancelButton: true, confirmButtonText: '刪除', confirmButtonColor: '#d32f2f',
-            preConfirm: () => { if(document.getElementById('delLinkInput').value !== currentReportCaptcha) { Swal.showValidationMessage('驗證碼錯誤'); return false; } }
-        }).then((res) => { if(res.isConfirmed) { currentLinks.splice(index, 1); renderLinkList(); } });
-    }
-
-    function checkUrlSafety(url) {
+    checkUrlSafety(url) {
         const feedback = document.getElementById('urlSafetyFeedback');
         if (!url) { feedback.innerHTML = ''; return; }
-        try {
-            const u = new URL(url);
-            feedback.innerHTML = u.protocol === 'https:' ? '<span class="text-success small fw-bold"><i class="fa-solid fa-circle-check"></i> 安全 (HTTPS)</span>' : '<span class="text-warning small fw-bold">非加密連結</span>';
-        } catch (e) { feedback.innerHTML = '<span class="text-danger small fw-bold">格式錯誤</span>'; }
-    }
-
-    // --- UI 邏輯 ---
-    function renderColorPalette() {
-        const p = document.getElementById('colorPalette');
-        let h = ''; PERSON_COLORS.forEach(c => h += `<div class="color-swatch" style="background:${c}" onclick="selectColor('${c}')" data-color="${c}"></div>`);
-        p.innerHTML = h;
-    }
-    function selectColor(c) {
-        document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('selected'));
-        const s = document.querySelector(`.color-swatch[data-color="${c}"]`);
-        if(s) s.classList.add('selected');
-        document.getElementById('selectedColor').value = c;
-    }
-    
-    function toggleFormFields() {
-        const type = document.getElementById('eventType').value;
-        const isAct = type === 'activity';
-        document.getElementById('nameLabel').innerText = isAct ? '活動名稱' : '參與人姓名';
-        document.querySelectorAll('.time-field-group').forEach(el => el.style.display = isAct ? 'block' : 'none');
-        
-        document.getElementById('colorSection').style.display = isAct ? 'none' : 'block';
-        
-        if (isAct) {
-            document.getElementById('selectedColor').value = ACTIVITY_COLOR;
-            document.getElementById('completedSection').style.display = isEditingPastActivity ? 'block' : 'none';
+        if (LinkManager.checkSafety(url)) {
+            feedback.innerHTML = '<span class="text-success small fw-bold"><i class="fa-solid fa-circle-check me-1"></i>連結格式安全 (HTTPS)</span>';
         } else {
-            if(!document.getElementById('eventId').value) {
-                const last = localStorage.getItem('lastPersonColor') || PERSON_COLORS[0];
-                selectColor(last);
-            }
-            document.getElementById('completedSection').style.display = 'none';
+            feedback.innerHTML = '<span class="text-warning small fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>非加密 (HTTP) 或格式有誤</span>';
         }
     }
 
-    function openAddModal() {
-        document.getElementById('eventForm').reset();
-        document.getElementById('eventId').value = '';
-        document.getElementById('modalTitle').innerText = '新增資料';
-        document.getElementById('deleteBtn').style.display = 'none';
-        isEditingPastActivity = false; currentLinks = [];
-        document.getElementById('completedSection').style.display = 'none';
-        
-        const curr = calendar.getDate(); const today = new Date();
-        const target = (curr.getMonth()===today.getMonth() && curr.getFullYear()===today.getFullYear()) ? today : curr;
-        const dStr = getLocalDateString(target.toISOString());
-        
-        fpStartDate.setDate(dStr); fpEndDate.setDate(dStr);
-        fpStartTime.setDate("08:00"); fpEndTime.setDate("08:00");
-        
-        generateCaptcha(); toggleFormFields();
-        new bootstrap.Modal(document.getElementById('eventModal')).show();
-    }
-
-    function openEditModal(e) {
-        const original = allEventsData.find(evt => evt.id === e.id) || e;
-        document.getElementById('eventId').value = original.id;
-        document.getElementById('modalTitle').innerText = '編輯資料';
-        document.getElementById('deleteBtn').style.display = 'block';
-        
-        const type = original.extendedProps?.type || 'person';
-        document.getElementById('eventType').value = type;
-        document.getElementById('eventTitle').value = original.title;
-        
-        const todayStr = getLocalDateString(new Date().toISOString());
-        const endCheck = original.end ? getLocalDateString(original.end) : getLocalDateString(original.start);
-        isEditingPastActivity = (type === 'activity' && endCheck <= todayStr);
-
-        try { currentLinks = JSON.parse(original.extendedProps?.linkUrl || '[]'); } catch(err) { currentLinks = []; }
-        renderLinkList();
-        
-        toggleFormFields();
-        if(type !== 'activity') selectColor(original.backgroundColor);
-        
-        const sStr = getLocalDateString(original.start);
-        fpStartDate.setDate(sStr);
-        
-        if (type === 'activity') {
-            fpStartTime.setDate(original.start.substring(11, 16));
-            if (original.end) {
-                fpEndDate.setDate(getLocalDateString(original.end));
-                fpEndTime.setDate(original.end.substring(11, 16));
-            }
-        } else {
-            if (original.end) {
-                fpEndDate.setDate(addDaysToDateString(getLocalDateString(original.end), -1));
-            } else {
-                fpEndDate.setDate(sStr);
-            }
-        }
-        
-        generateCaptcha();
-        new bootstrap.Modal(document.getElementById('eventModal')).show();
-    }
-
-    function saveEventToCloud(data, action) {
-        Swal.fire({title:'儲存中...',didOpen:()=>Swal.showLoading()});
-        fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:action,...data}) })
-        .then(()=>{ setTimeout(()=>{ Swal.fire({icon:'success',title:'完成',timer:1500,showConfirmButton:false}); calendar.refetchEvents(); bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); },2000); });
-    }
-
-    function deleteEventFromCloud(id) {
-        Swal.fire({title:'刪除中...',didOpen:()=>Swal.showLoading()});
-        fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'delete',id:id}) })
-        .then(()=>{ setTimeout(()=>{ Swal.fire('已刪除','','success'); calendar.refetchEvents(); bootstrap.Modal.getInstance(document.getElementById('eventModal')).hide(); },2000); });
-    }
-    
-    function sendReport(c) {
-        Swal.fire({title:'傳送中...',didOpen:()=>Swal.showLoading()});
-        fetch(SCRIPT_URL, {method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'send_report',content:c})})
-        .then(()=>Swal.fire('已回報','','success'));
-    }
-
-    // --- 輔助 ---
-    function syncDates(dStr) { if(dStr){ const s=new Date(document.getElementById('startDate').value), e=new Date(document.getElementById('endDate').value); if(e<s) fpEndDate.setDate(s); } }
-    function syncTimes() { /* Flatpickr handled */ }
-    function generateCaptcha() { currentCaptcha = Math.floor(1000+Math.random()*9000).toString(); document.getElementById('captchaDisplay').innerText = currentCaptcha; document.getElementById('captchaInput').value = ''; }
-    function refreshReportCaptcha() { currentReportCaptcha = Math.floor(1000+Math.random()*9000).toString(); if(document.getElementById('reportCaptchaDisplay')) document.getElementById('reportCaptchaDisplay').innerText = currentReportCaptcha; }
-    function openReportModal() {
-        refreshReportCaptcha();
-        Swal.fire({ title:'回報問題', html: `<textarea id="repTxt" class="form-control mb-2"></textarea>驗證碼: <span id="reportCaptchaDisplay">${currentReportCaptcha}</span><br><input id="repCap" class="form-control mt-2">`, showCancelButton:true, preConfirm: () => {
-            if(document.getElementById('repCap').value !== currentReportCaptcha) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
-            return document.getElementById('repTxt').value;
-        }}).then(r => { if(r.isConfirmed) sendReport(r.value); });
-    }
-    function confirmDelete() { if(document.getElementById('captchaInput').value!==currentCaptcha){Swal.fire('驗證碼錯誤');return;} Swal.fire({title:'刪除?',showCancelButton:true}).then(r=>{if(r.isConfirmed) deleteEventFromCloud(document.getElementById('eventId').value)}); }
-    
-    function jumpToDate(s) { 
-        calendar.changeView('dayGridMonth', s); 
-        setTimeout(()=>{
-            document.querySelectorAll('.highlight-target-day').forEach(el=>el.classList.remove('highlight-target-day'));
-            const el = document.querySelector(`.fc-daygrid-day[data-date="${getLocalDateString(s)}"]`);
-            if(el) { el.classList.add('highlight-target-day'); el.scrollIntoView({behavior:"smooth",block:"center"}); }
-        },200);
-    }
-
-    // 儀表板
-    function renderDashboard() {
-        const list = document.getElementById('upcomingList');
-        const today = getLocalDateString(new Date().toISOString());
-        const up = allEventsData.filter(e => getLocalDateString(e.start) >= today).sort((a,b)=>new Date(a.start)-new Date(b.start));
-        
-        let h = '';
-        const acts = up.filter(e=>(e.extendedProps?.type||e.type)==='activity');
-        const ppl = up.filter(e=>(e.extendedProps?.type||e.type)!=='activity');
-        
-        if(acts.length) {
-            h+='<div class="section-label">近期活動</div>';
-            acts.forEach(e=>h+=`<button class="btn dashboard-btn btn-act" style="background:${e.backgroundColor};color:#333" onclick="jumpToDate('${e.start}')"><b>${e.title}</b> <small>${getLocalDateString(e.start)}</small></button>`);
-        }
-        if(ppl.length) {
-            h+='<div class="section-label">近期人員</div><div class="d-block">';
-            ppl.forEach(e=>h+=`<button class="btn dashboard-btn btn-person" style="background:${e.backgroundColor};color:#333" onclick="jumpToDate('${e.start}')">${getLocalDateString(e.start)} ${e.title}</button>`);
-            h+='</div>';
-        }
-        list.innerHTML = h || '<div class="text-center text-muted">無近期活動</div>';
-        
-        const ys = new Set(allEventsData.map(e=>getLocalDateString(e.start).substring(0,4)));
-        const sel = document.getElementById('searchYear'); sel.innerHTML='<option>年份</option>';
-        Array.from(ys).sort().reverse().forEach(y=> sel.innerHTML+=`<option value="${y}">${y}年</option>`);
-    }
-    function filterHistoryResult() {
-        const y = document.getElementById('searchYear').value;
-        const t = document.getElementById('searchType').value;
-        const res = document.getElementById('searchResult');
-        res.innerHTML = '<option>選擇結果</option>';
-        if(y === '年份') return;
-        
-        const today = getLocalDateString(new Date().toISOString());
-        const fil = allEventsData.filter(e => getLocalDateString(e.start).substring(0,4)===y && (t==='all' || e.type===t) && getLocalDateString(e.start) < today).sort((a,b)=>new Date(a.start)-new Date(b.start));
-        fil.forEach(e => res.innerHTML += `<option value="${e.start}">${getLocalDateString(e.start)} ${e.title}</option>`);
-    }
-    function jumpToSelectedEvent() { const v = document.getElementById('searchResult').value; if(v && v!=='選擇結果') jumpToDate(v); }
-
-    document.getElementById('eventForm').addEventListener('submit', function(e) {
+    // --- Submit Logic ---
+    handleFormSubmit(e) {
         e.preventDefault();
-        if(document.getElementById('captchaInput').value !== currentCaptcha) { Swal.fire('驗證碼錯誤'); return; }
-        
-        const ln=document.getElementById('linkName').value.trim(), lu=document.getElementById('linkUrl').value.trim();
-        if(ln && lu && currentLinks.length<3) currentLinks.push({name:ln, url:lu});
+        if (!this.mainCaptcha.validate()) { Swal.fire({ icon: 'error', title: '驗證碼錯誤' }); return; }
 
-        const id=document.getElementById('eventId').value, type=document.getElementById('eventType').value;
-        const sDate=document.getElementById('startDate').value, eDate=document.getElementById('endDate').value;
+        // 自動加入未按 + 號的連結
+        const pName = document.getElementById('linkName').value.trim();
+        const pUrl = document.getElementById('linkUrl').value.trim();
+        if (pName && pUrl) try { this.linkManager.addLink(pName, pUrl); } catch {}
+
+        const id = document.getElementById('eventId').value;
+        const type = document.getElementById('eventType').value;
+        const sDate = document.getElementById('startDate').value;
+        const eDate = document.getElementById('endDate').value;
         
-        let sStr, eStr;
-        if(type==='activity') {
-            sStr = `${sDate}T${document.getElementById('startTime').value}`;
-            eStr = `${eDate}T${document.getElementById('endTime').value}`;
+        let startStr, endStr;
+        if (type === 'activity') {
+            startStr = `${sDate}T${document.getElementById('startTime').value}`;
+            endStr = `${eDate}T${document.getElementById('endTime').value}`;
         } else {
-            sStr = sDate;
-            eStr = addDaysToDateString(eDate, 1);
+            startStr = sDate;
+            endStr = DateUtils.addDaysToDateString(eDate, 1);
         }
-        
-        let color = (type==='activity') ? ACTIVITY_COLOR : document.getElementById('selectedColor').value;
-        if(type!=='activity') localStorage.setItem('lastPersonColor', color);
 
-        const evt = {
+        const color = document.getElementById('selectedColor').value;
+        if (type !== 'activity') localStorage.setItem('lastPersonColor', color);
+
+        const data = {
             id: id || ('evt_' + Date.now()),
             title: document.getElementById('eventTitle').value,
-            type: type, start: sStr, end: eStr,
-            backgroundColor: color, textColor: '#333',
-            order: type==='activity'?-1:10,
-            linkName: 'MultiLinks', linkUrl: JSON.stringify(currentLinks)
+            type: type, start: startStr, end: endStr,
+            backgroundColor: color, textColor: '#333333',
+            order: type === 'activity' ? -1 : 10,
+            linkName: 'MultiLinks',
+            linkUrl: this.linkManager.getJson()
         };
-        saveEventToCloud(evt, id?'update':'create');
-    });
+
+        this.app.saveEvent(data, id ? 'update' : 'create');
+    }
+
+    // --- Other Modals ---
+    openDeleteLinkModal(index) {
+        this.reportCaptcha.generate(); // Reuse report captcha logic
+        Swal.fire({
+            title: '刪除連結確認',
+            html: `
+                <p class="text-secondary mb-2">請輸入驗證碼以刪除此連結</p>
+                <div class="d-flex align-items-center mb-2">
+                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.reportCaptcha.currentCode}</div>
+                    <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="app.ui.reportCaptcha.generate()"></i>
+                </div>
+                <input type="text" id="deleteLinkCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
+            `,
+            showCancelButton: true, confirmButtonText: '確認刪除', confirmButtonColor: '#d32f2f',
+            preConfirm: () => {
+                const input = document.getElementById('deleteLinkCaptchaInput').value;
+                if (input !== this.reportCaptcha.currentCode) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                this.linkManager.removeLink(index);
+                this.renderLinkList();
+            }
+        });
+    }
+
+    openReportModal() {
+        this.reportCaptcha.generate();
+        Swal.fire({
+            title: '回報問題',
+            html: `
+                <textarea id="reportText" class="form-control mb-3" rows="4" placeholder="請描述您遇到的錯誤或建議..."></textarea>
+                <div class="d-flex align-items-center mb-2">
+                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.reportCaptcha.currentCode}</div>
+                    <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="app.ui.reportCaptcha.generate()"></i>
+                </div>
+                <input type="text" id="reportCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
+            `,
+            showCancelButton: true, confirmButtonText: '送出回報', confirmButtonColor: '#90A4AE',
+            preConfirm: () => {
+                const content = document.getElementById('reportText').value;
+                const input = document.getElementById('reportCaptchaInput').value;
+                if (!content) { Swal.showValidationMessage('請輸入回報內容'); return false; }
+                if (input !== this.reportCaptcha.currentCode) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
+                return content;
+            }
+        }).then((res) => {
+            if (res.isConfirmed) this.app.sendReport(res.value);
+        });
+    }
+
+    confirmDelete() {
+        if (!this.mainCaptcha.validate()) { Swal.fire({icon:'error', title:'驗證碼錯誤'}); return; }
+        Swal.fire({title:'確定刪除？', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef9a9a', confirmButtonText:'刪除'})
+            .then(r => {
+                if(r.isConfirmed) this.app.deleteEvent(document.getElementById('eventId').value);
+            });
+    }
+}
+
+// 8. App: 主程式入口
+class App {
+    constructor() {
+        this.eventManager = new EventManager();
+        this.ui = new UIManager(this);
+        this.calendar = null;
+    }
+
+    init() {
+        // Init Time Selects
+        const opts = this.generateTimeOptions();
+        document.getElementById('startTime').innerHTML = opts;
+        document.getElementById('endTime').innerHTML = opts;
+
+        // Init Calendar
+        this.initCalendar();
+    }
+
+    generateTimeOptions() {
+        let opt=''; 
+        for(let h=0;h<24;h++) for(let m=0;m<60;m+=15) { 
+            let t = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; 
+            opt+=`<option value="${t}">${t}</option>`; 
+        }
+        return opt;
+    }
+
+    initCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        this.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'zh-tw',
+            headerToolbar: { left: 'myToday', center: 'prev,title,next', right: 'dayGridMonth,timeGridWeek,listWeek' },
+            buttonText: { month: '月', week: '週', list: '列表' },
+            customButtons: {
+                myToday: {
+                    text: '今天',
+                    click: () => {
+                        this.calendar.today();
+                        this.ui.jumpToDate(DateUtils.getTodayString());
+                    }
+                }
+            },
+            eventDisplay: 'block',
+            contentHeight: 'auto', 
+            dayMaxEvents: 4, 
+            fixedWeekCount: false,      
+            eventOrder: 'order,originalStart,title', 
+            navLinks: true,
+            navLinkDayClick: (date) => jumpToDate(date),
+            events: (info, success, fail) => this.fetchEventsWrapper(info, success, fail),
+            eventClick: (info) => {
+                if (info.view.type.includes('list')) jumpToDate(info.event.start);
+                else this.ui.openEditModal(info.event);
+            },
+            eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
+        });
+        this.calendar.render();
+        // 將 calendar 綁定回 ui，方便操作
+        this.ui.jumpToDate = (d) => this.jumpToDate(d);
+    }
+
+    fetchEventsWrapper(info, successCallback, failureCallback) {
+        if (this.eventManager.allEvents.length === 0) {
+            Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        }
+        
+        APIService.fetchEvents()
+            .then(data => {
+                this.eventManager.setEvents(data);
+                this.ui.renderDashboard();
+                successCallback(this.eventManager.getExplodedEvents());
+                Swal.close();
+            })
+            .catch(err => failureCallback(err));
+    }
+
+    saveEvent(data, action) {
+        Swal.fire({title:'儲存中...', didOpen:()=>{Swal.showLoading()}});
+        APIService.saveEvent(data, action)
+            .then(() => {
+                setTimeout(() => { 
+                    Swal.fire({icon:'success', title:'完成', timer:1500, showConfirmButton:false}); 
+                    this.calendar.refetchEvents(); 
+                    this.ui.modalEl.hide(); 
+                }, 2000);
+            })
+            .catch(() => Swal.fire('連線異常','請檢查網路','error'));
+    }
+
+    deleteEvent(id) {
+        Swal.fire({title:'刪除中...', didOpen:()=>{Swal.showLoading()}});
+        APIService.deleteEvent(id)
+            .then(() => {
+                setTimeout(() => { 
+                    Swal.fire('已刪除','','success'); 
+                    this.calendar.refetchEvents(); 
+                    this.ui.modalEl.hide(); 
+                }, 2000);
+            });
+    }
+
+    sendReport(content) {
+        Swal.fire({title:'傳送中...', didOpen:()=>{Swal.showLoading()}});
+        APIService.sendReport(content)
+            .then(() => Swal.fire('已回報', '感謝您的回饋', 'success'))
+            .catch(() => Swal.fire('失敗', '請稍後再試', 'error'));
+    }
+
+    jumpToDate(dateVal) {
+        this.calendar.changeView('dayGridMonth', dateVal);
+        document.getElementById('calendar').scrollIntoView({behavior:'smooth'});
+        const targetStr = typeof dateVal === 'string' ? DateUtils.getLocalDateString(dateVal) : DateUtils.getLocalDateString(dateVal.toISOString());
+        
+        setTimeout(() => {
+            document.querySelectorAll('.highlight-target-day').forEach(el => el.classList.remove('highlight-target-day'));
+            const targetEl = document.querySelector(`.fc-daygrid-day[data-date="${targetStr}"]`);
+            if (targetEl) {
+                targetEl.classList.add('highlight-target-day');
+                targetEl.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
+            }
+        }, 200);
+    }
+}
+
+// ==========================================
+// 🚀 啟動 & Global Bridge (為了 HTML 相容性)
+// ==========================================
+const app = new App();
+
+document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
+
+// Bridge functions for HTML onclick attributes
+window.openAddModal = () => app.ui.openAddModal();
+window.openReportModal = () => app.ui.openReportModal();
+window.jumpToDate = (d) => app.jumpToDate(d);
+window.jumpToSelectedEvent = () => {
+    const val = document.getElementById('searchResult').value;
+    if(val) app.jumpToDate(val);
+    else Swal.fire({icon:'info', title:'提示', text:'請先選擇一個搜尋結果'});
+};
+window.filterHistoryResult = () => app.ui.renderHistoryResult();
+window.generateCaptcha = () => app.ui.mainCaptcha.generate();
+window.refreshReportCaptcha = () => app.ui.reportCaptcha.generate();
+window.confirmDelete = () => app.ui.confirmDelete();
+window.addLinkToLocal = () => app.ui.addLink();
+window.checkUrlSafety = (v) => app.ui.checkUrlSafety(v);
+window.syncDates = () => {
+    const s = document.getElementById('startDate').value;
+    const e = document.getElementById('endDate');
+    if(!e.value || e.value < s) e.value = s;
+};
+window.syncTimes = () => {
+    const sDate = document.getElementById('startDate').value;
+    const eDate = document.getElementById('endDate').value;
+    if (sDate === eDate) {
+        const sTime = document.getElementById('startTime').value;
+        const eTime = document.getElementById('endTime');
+        if(eTime.value < sTime) eTime.value = sTime;
+    }
+};
+window.toggleFormFields = () => app.ui.toggleFormFields();
+window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
+
 </script>
 </body>
 </html>
