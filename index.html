@@ -1,4 +1,4 @@
-<!-- v1.2 | RWD Enhancement & UI Polish | 2025-09-29 | Mobile Optimized -->
+<!-- v1.4 | Fix ReferenceError & Dynamic Captcha | 2025-09-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.2 RWD Update
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v1.3 Mobile Optimized
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -36,6 +36,7 @@
             color: var(--text-primary);
         }
         
+        /* 預設 Container (電腦版) */
         .container { max-width: 1200px; margin-top: 40px; margin-bottom: 40px; }
         
         h2 { 
@@ -56,8 +57,131 @@
             border: 1px solid var(--border-color);
         }
 
-        /* --- RWD 高度與排版控制 (重點修改) --- */
-        /* 電腦版 */
+        /* =========================================
+           📱 手機版適配 (< 768px) - v1.3 極致優化
+           目標：類 Google Calendar APP 體驗 (滿版、精簡、FAB按鈕)
+           ========================================= */
+        @media (max-width: 767.98px) {
+            /* 1. 滿版設定 & 背景純淨化 */
+            body { background-color: #FFFFFF; } 
+            
+            .container { 
+                max-width: 100%; 
+                margin: 0; 
+                padding: 0; 
+                overflow-x: hidden;
+            }
+            
+            /* 標題列：改為置頂固定，增加空間利用率 */
+            .d-flex.justify-content-between {
+                padding: 10px 15px;
+                background-color: var(--bg-color);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                border-bottom: 1px solid #EFEBE9;
+                margin-bottom: 0 !important;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            }
+            
+            h2 { 
+                font-size: 1.2rem; 
+                margin: 0; 
+                border: none; 
+                padding: 0; 
+            }
+            
+            /* 2. 行事曆本體：去框、去內距、滿版 */
+            #calendar { 
+                padding: 0; 
+                border: none; 
+                border-radius: 0; 
+                box-shadow: none;
+                margin-bottom: 20px !important;
+            }
+            
+            /* 工具列 (上個月/下個月) */
+            .fc-header-toolbar {
+                padding: 8px 5px;
+                margin-bottom: 5px !important;
+            }
+            .fc-toolbar-title { font-size: 1.1rem !important; }
+            .fc-button { 
+                padding: 4px 10px !important; 
+                font-size: 0.8rem !important; 
+            }
+
+            /* 3. 格子與字體極小化 */
+            .fc-daygrid-day-frame {
+                min-height: 70px !important; 
+            }
+            .fc-col-header-cell {
+                padding: 5px 0;
+                font-size: 0.8rem; /* 星期幾的字縮小 */
+            }
+            .fc-daygrid-day-number {
+                font-size: 0.75rem !important; /* 日期數字縮小 */
+                color: #777;
+                padding: 2px 4px !important;
+            }
+            
+            /* 事件條：更緊湊 */
+            .fc-event {
+                font-size: 0.7rem !important; /* 約 11-12px */
+                padding: 1px 3px !important;
+                border-radius: 2px !important;
+                margin: 1px 0 !important;
+                line-height: 1.2 !important;
+            }
+            
+            /* 4. 「新增」按鈕優化：改為懸浮按鈕 (FAB) */
+            .btn-custom-add {
+                position: fixed;
+                bottom: 30px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                font-size: 0 !important; /* 隱藏文字 */
+                background-color: var(--primary-action);
+            }
+            /* 強制顯示 icon 並放大 */
+            .btn-custom-add i {
+                font-size: 1.5rem !important; 
+                margin: 0 !important;
+                display: block !important;
+            }
+            .btn-custom-add:hover { transform: scale(1.05); }
+
+            /* 5. 儀表板與回報按鈕調整 */
+            .dashboard-card {
+                margin: 0 10px 15px 10px; /* 卡片左右留一點邊距 */
+                border-radius: 8px;
+            }
+            
+            /* 回報按鈕：避免被 FAB 擋住，改為置中並墊高 */
+            .report-bug-container {
+                justify-content: center;
+                padding-bottom: 90px; /* 預留 FAB 空間 */
+                margin-top: 10px;
+            }
+            .btn-report-bug {
+                background-color: rgba(144, 164, 174, 0.9);
+                font-size: 0.8rem;
+                padding: 5px 15px;
+            }
+            
+            /* Modal 滿版微調 */
+            .modal-dialog { margin: 10px; }
+        }
+
+        /* 電腦版設定 (維持原樣) */
         @media (min-width: 768px) {
             .fc-daygrid-day-frame {
                 height: 130px !important; 
@@ -66,248 +190,86 @@
                 overflow: hidden;
                 position: relative; 
             }
-        }
-        
-        /* 手機版適配 (< 768px) */
-        @media (max-width: 767.98px) {
-            .container { margin-top: 20px; padding-left: 10px; padding-right: 10px; }
-            
-            h2 { font-size: 1.4rem; }
-            
-            #calendar { padding: 10px; }
-            
-            /* 強制格子高度自動化，適應內容 */
-            .fc-daygrid-day-frame {
-                height: auto !important; 
-                min-height: 80px !important;
-                padding-bottom: 5px; /* 增加底部緩衝 */
+            /* 電腦版回報按鈕位置 */
+            .report-bug-container { 
+                display: flex;
+                justify-content: flex-end;
+                margin-top: 20px;
+                padding-bottom: 20px;
+                width: 100%;
             }
-            
-            /* 工具列自動換行 */
-            .fc-header-toolbar { 
-                flex-wrap: wrap; 
-                gap: 10px; 
-                margin-bottom: 15px !important;
-            }
-            .fc-toolbar-chunk { 
-                flex: 1 1 auto; 
-                display: flex; 
-                justify-content: center; 
-            }
-            .fc-toolbar-title { font-size: 1.2rem !important; margin: 0 5px !important; }
-            
-            /* 按鈕大小調整 */
-            .fc-button { padding: 4px 8px !important; font-size: 0.85rem !important; }
-            .btn-custom-add { padding: 8px 15px; font-size: 0.9rem; }
-            
-            /* Modal 全寬 */
-            .modal-dialog { margin: 0.5rem; max-width: none; }
         }
 
-        /* 壓縮日期欄位 */
-        .fc-daygrid-day-top {
-            flex-direction: row;
-            padding: 1px 4px !important; 
-            height: 24px !important;      
-            min-height: 24px !important;
-        }
-        .fc-daygrid-day-number {
-            font-size: 0.9rem;
-            line-height: 1; 
-            margin: 0 !important;
-        }
+        /* 通用樣式 (日期連結去底線) */
+        .fc-daygrid-day-top { flex-direction: row; padding: 1px 4px !important; height: 24px !important; min-height: 24px !important; }
+        .fc-daygrid-day-number { font-size: 0.9rem; line-height: 1; margin: 0 !important; }
+        a.fc-col-header-cell-cushion, a.fc-daygrid-day-number { text-decoration: none !important; color: var(--text-secondary) !important; cursor: pointer; }
+        a.fc-col-header-cell-cushion:hover, a.fc-daygrid-day-number:hover { text-decoration: none !important; color: var(--text-primary) !important; }
 
-        /* 移除日期連結底線 */
-        a.fc-col-header-cell-cushion, 
-        a.fc-daygrid-day-number {
-            text-decoration: none !important;
-            color: var(--text-secondary) !important;
-            cursor: pointer; 
-        }
-        a.fc-col-header-cell-cushion:hover, 
-        a.fc-daygrid-day-number:hover {
-            text-decoration: none !important; 
-            color: var(--text-primary) !important;
-        }
-
-        /* 搜尋跳轉的高亮動畫 */
+        /* Highlight Animation */
         @keyframes flash-highlight {
             0% { background-color: rgba(255, 235, 59, 0.8); box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.6); }
             100% { background-color: transparent; box-shadow: none; }
         }
-        .highlight-target-day {
-            animation: flash-highlight 2.5s ease-out;
-            position: relative;
-            z-index: 10; 
-        }
+        .highlight-target-day { animation: flash-highlight 2.5s ease-out; position: relative; z-index: 10; }
         
-        /* --- 事件樣式 --- */
-        .fc-event { 
-            cursor: pointer; border: none !important; 
-            box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); 
-            font-size: 0.8rem; 
-            margin-bottom: 1px !important; 
-            border-radius: 4px !important; 
-            padding: 1px 6px !important;    
-            line-height: 1.3 !important;    
-        }
+        /* Event Styles */
+        .fc-event { cursor: pointer; border: none !important; box-shadow: 0 1px 1px rgba(93, 64, 55, 0.1); font-size: 0.8rem; margin-bottom: 1px !important; border-radius: 4px !important; padding: 1px 6px !important; line-height: 1.3 !important; }
         .fc-event:hover { transform: translateY(-1px); filter: brightness(0.95); z-index: 5; }
-        
-        .person-pill { 
-            display: inline-block !important; 
-            width: auto !important; 
-            margin-right: 4px !important; 
-            white-space: nowrap; 
-            font-weight: 500;
-            color: #5D4037 !important;
-            background-color: var(--event-color, #eee); 
-        }
-        
-        .event-type-activity { 
-            background-color: #F8BBD0; 
-            border-left: 4px solid #EC407A !important; 
-            color: #5D4037 !important; 
-            font-weight: bold; 
-            width: 100% !important; 
-            display: block !important;
-            margin-bottom: 2px !important; 
-        }
-        
+        .person-pill { display: inline-block !important; width: auto !important; margin-right: 4px !important; white-space: nowrap; font-weight: 500; color: #5D4037 !important; background-color: var(--event-color, #eee); }
+        .event-type-activity { background-color: #F8BBD0; border-left: 4px solid #EC407A !important; color: #5D4037 !important; font-weight: bold; width: 100% !important; display: block !important; margin-bottom: 2px !important; }
         .hide-time-text .fc-event-time { display: none !important; }
-
-        .fc-daygrid-day-events { 
-            display: flex !important; flex-wrap: wrap !important; 
-            align-content: flex-start !important; 
-            gap: 1px !important; 
-            padding: 0 2px !important; 
-            margin-top: 0 !important;  
-        }
+        .fc-daygrid-day-events { display: flex !important; flex-wrap: wrap !important; align-content: flex-start !important; gap: 1px !important; padding: 0 2px !important; margin-top: 0 !important; }
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
         .fc-daygrid-event-harness:has(.event-type-activity) { width: 100% !important; flex-basis: 100% !important; }
 
-        /* UI 元件 */
+        /* UI Components */
         .fc-col-header-cell { background-color: #FFF8E1; padding: 8px 0; border-bottom: 2px solid #FFE0B2; color: var(--text-primary); }
         
-        /* 按鈕樣式 */
-        .fc-button-primary {
-            background-color: var(--accent-color) !important;
-            border-color: var(--accent-color) !important;
-            color: #FFFFFF !important;
-            border-radius: 8px !important;
-            font-weight: 500 !important;
-            padding: 5px 14px !important;
-            box-shadow: 0 2px 4px rgba(141, 110, 99, 0.2) !important;
-            transition: all 0.2s ease !important;
-            opacity: 0.9;
-        }
-        .fc-button-primary:hover { 
-            background-color: #795548 !important; 
-            border-color: #795548 !important;
-            transform: translateY(-1px);
-            opacity: 1;
-        }
-        .fc-button-primary:not(:disabled).fc-button-active {
-            background-color: #5D4037 !important; 
-            border-color: #5D4037 !important;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important;
-        }
+        /* Button Styles */
+        .fc-button-primary { background-color: var(--accent-color) !important; border-color: var(--accent-color) !important; color: #FFFFFF !important; border-radius: 8px !important; font-weight: 500 !important; padding: 5px 14px !important; box-shadow: 0 2px 4px rgba(141, 110, 99, 0.2) !important; transition: all 0.2s ease !important; opacity: 0.9; }
+        .fc-button-primary:hover { background-color: #795548 !important; border-color: #795548 !important; transform: translateY(-1px); opacity: 1; }
+        .fc-button-primary:not(:disabled).fc-button-active { background-color: #5D4037 !important; border-color: #5D4037 !important; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2) !important; }
         .fc-button:focus { box-shadow: none !important; }
 
-        /* 新增按鈕 */
-        .btn-custom-add { 
-            background-color: var(--primary-action); 
-            color: #333; 
-            border-radius: var(--border-radius); 
-            padding: 10px 30px; 
-            border: none; 
-            box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); 
-            transition: all 0.2s; 
-            font-weight: 600;
-            letter-spacing: 1px;
-        }
+        /* Custom Add Button (Desktop Default) */
+        .btn-custom-add { background-color: var(--primary-action); color: #333; border-radius: var(--border-radius); padding: 10px 30px; border: none; box-shadow: 0 3px 10px rgba(163, 218, 255, 0.4); transition: all 0.2s; font-weight: 600; letter-spacing: 1px; }
         .btn-custom-add:hover { background-color: #81D4FA; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(163, 218, 255, 0.6); color: #333;}
 
-        /* 回報按鈕 (修改：非懸浮，頁尾右下) */
-        .report-bug-container { 
-            /* 移除 position: fixed */
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-            padding-bottom: 20px;
-            width: 100%;
-        }
-        .btn-report-bug {
-            background-color: #90A4AE; 
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            font-size: 0.95rem;
-            font-weight: 600;
-            display: flex; align-items: center; gap: 8px;
-            transition: all 0.3s;
-        }
+        /* Report Button (Default) */
+        .btn-report-bug { background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
         
-        /* 儀表板 */
-        .dashboard-card { 
-            background: #fff; 
-            border: 1px solid var(--border-color); 
-            border-radius: var(--border-radius); 
-            padding: 20px; 
-            height: 100%; 
-            box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); 
-        }
+        /* Dashboard */
+        .dashboard-card { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 20px; height: 100%; box-shadow: 0 4px 15px rgba(141, 110, 99, 0.05); }
         .card-history { background-color: #FAFAFA; border-top: 5px solid #AED581; }
         .card-upcoming { background-color: #FAFAFA; border-top: 5px solid #FFD54F; }
         .dashboard-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid #EFEBE9; }
-        
         .upcoming-list-container { max-height: 400px; overflow-y: auto; padding-right: 8px; }
         .upcoming-list-container::-webkit-scrollbar { width: 5px; }
         .upcoming-list-container::-webkit-scrollbar-thumb { background-color: #D7CCC8; border-radius: 10px; }
-        
         .dashboard-btn { border: none; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(141, 110, 99, 0.1); transition: 0.2s; position: relative; border-radius: 6px; }
         .dashboard-btn:hover { transform: translateY(-1px); opacity: 0.95; }
-        
         .btn-act { width: 100%; text-align: left; padding: 8px 15px; margin-bottom: 8px; }
         .btn-person { display: inline-block; width: auto; padding: 6px 12px; margin-right: 6px; margin-bottom: 8px; border-radius: 15px; font-size: 0.85rem; font-weight: 500; }
-        
         .section-label { font-size: 0.85rem; color: #A1887F; margin-top: 10px; margin-bottom: 5px; font-weight: 700; letter-spacing: 1px; border-left: 3px solid #D7CCC8; padding-left: 8px; }
 
+        /* Misc */
         .color-swatch { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; display: inline-block; }
         .color-swatch:hover { transform: scale(1.15); }
         .color-swatch.selected { border-color: #8D6E63; transform: scale(1.1); box-shadow: 0 0 0 2px #D7CCC8; }
-        
-        /* Modal & Link Styles */
         .modal-content { border-radius: 15px; border: none; box-shadow: 0 10px 40px rgba(141, 110, 99, 0.15); }
         .modal-header { background-color: #FFF8E1; border-radius: 15px 15px 0 0; border-bottom: 1px solid #FFE0B2; }
         .modal-title { color: #5D4037; font-weight: bold; letter-spacing: 1px; }
         .captcha-box { background: #FFF3E0; color: #5D4037; font-size: 24px; font-weight: bold; letter-spacing: 6px; text-align: center; padding: 8px; border-radius: var(--border-radius); user-select: none; border: 2px dashed #FFCC80; }
         .refresh-icon { cursor: pointer; color: #BCAAA4; transition: 0.3s; font-size: 1.2rem; margin-left: 15px; margin-top: 5px; }
         .refresh-icon:hover { color: #8D6E63; transform: rotate(180deg); }
-
-        /* 已完成活動區塊 */
         #completedSection { background-color: #F1F8E9; border: 1px solid #C5E1A5; border-radius: 12px; margin-bottom: 20px; }
         .completed-badge { color: #558B2F; font-weight: bold; font-size: 0.95rem; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
         .input-link { background-color: #fff !important; }
-        
-        /* 上方輸入區 */
         #addLinkContainer { padding-bottom: 15px; border-bottom: 1px dashed #C5E1A5; margin-bottom: 10px; }
-        
-        /* 下方已存連結區 */
         #savedLinksContainer h6 { color: #33691E; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px; }
-        .saved-link-item {
-            background-color: #FFFFFF;
-            border: 1px solid #AED581;
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
+        .saved-link-item { background-color: #FFFFFF; border: 1px solid #AED581; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .saved-link-info { flex-grow: 1; overflow: hidden; }
         .saved-link-name { font-weight: bold; color: #558B2F; font-size: 0.9rem; display: block; }
         .saved-link-url { color: #0277BD; font-size: 0.85rem; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -315,39 +277,10 @@
         .link-safety-badge { font-size: 0.75rem; margin-left: 5px; padding: 1px 5px; border-radius: 4px; vertical-align: middle; }
         .badge-safe { background-color: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
         .badge-unsafe { background-color: #FFEBEE; color: #C62828; border: 1px solid #EF9A9A; }
-
-        /* 儲存按鈕 (浮動) */
-        .btn-save-modal {
-            background-color: var(--primary-action);
-            color: #333;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 3px 8px rgba(79, 195, 247, 0.3);
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        .btn-save-modal:hover {
-            background-color: #29B6F6;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(79, 195, 247, 0.5);
-            color: #333;
-        }
-
-        /* 刪除按鈕 (白字) */
-        .btn-delete-modal {
-            border: 1px solid #ef9a9a;
-            color: #d32f2f;
-            background-color: transparent;
-            border-radius: 8px;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-        .btn-delete-modal:hover {
-            background-color: #ef9a9a;
-            color: white !important; 
-            box-shadow: 0 3px 8px rgba(239, 154, 154, 0.4);
-            transform: translateY(-1px);
-        }
+        .btn-save-modal { background-color: var(--primary-action); color: #333; border: none; border-radius: 8px; box-shadow: 0 3px 8px rgba(79, 195, 247, 0.3); transition: all 0.2s; font-weight: 600; }
+        .btn-save-modal:hover { background-color: #29B6F6; transform: translateY(-2px); box-shadow: 0 5px 12px rgba(79, 195, 247, 0.5); color: #333; }
+        .btn-delete-modal { border: 1px solid #ef9a9a; color: #d32f2f; background-color: transparent; border-radius: 8px; transition: all 0.2s; font-weight: 600; }
+        .btn-delete-modal:hover { background-color: #ef9a9a; color: white !important; box-shadow: 0 3px 8px rgba(239, 154, 154, 0.4); transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -477,7 +410,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v1.2
+// 🏗️ 系統架構 (System Architecture) - v1.4
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -557,24 +490,31 @@ class APIService {
     }
 }
 
-// 4. CaptchaSystem: 驗證碼系統
+// 4. CaptchaSystem: 驗證碼系統 (Fixed Dynamic Element Binding)
 class CaptchaSystem {
     constructor(displayId, inputId) {
-        this.displayEl = document.getElementById(displayId);
-        this.inputEl = document.getElementById(inputId);
+        this.displayId = displayId;
+        this.inputId = inputId;
         this.currentCode = "";
     }
 
     generate() {
+        // Re-fetch elements every time to handle dynamic modals
+        const displayEl = document.getElementById(this.displayId);
+        const inputEl = document.getElementById(this.inputId);
+        
         this.currentCode = Math.floor(1000 + Math.random() * 9000).toString();
-        if (this.displayEl) this.displayEl.innerText = this.currentCode;
-        if (this.inputEl) this.inputEl.value = '';
+        
+        if (displayEl) displayEl.innerText = this.currentCode;
+        if (inputEl) inputEl.value = '';
+        
         return this.currentCode;
     }
 
     validate() {
-        if (!this.inputEl) return false;
-        return this.inputEl.value === this.currentCode;
+        const inputEl = document.getElementById(this.inputId);
+        if (!inputEl) return false;
+        return inputEl.value === this.currentCode;
     }
 }
 
@@ -646,7 +586,6 @@ class EventManager {
         });
     }
 
-    // 將資料 "炸開" 成 FullCalendar 顯示用的格式 (v1.0 邏輯移植)
     getExplodedEvents() {
         let exploded = [];
         this.allEvents.forEach(item => {
@@ -724,7 +663,6 @@ class UIManager {
         
         this.isEditingPastActivity = false;
         
-        // Modal & Forms
         this.modalEl = new bootstrap.Modal(document.getElementById('eventModal'));
         this.bindEvents();
     }
@@ -732,7 +670,6 @@ class UIManager {
     bindEvents() {
         document.getElementById('eventForm').addEventListener('submit', (e) => this.handleFormSubmit(e));
         
-        // 渲染顏色選擇器
         const palette = document.getElementById('colorPalette');
         let html = '';
         Config.COLORS_PERSON.forEach((color, index) => {
@@ -741,7 +678,6 @@ class UIManager {
         palette.innerHTML = html;
     }
 
-    // --- Dashboard UI ---
     renderDashboard() {
         const upcoming = this.app.eventManager.getUpcomingEvents();
         const listContainer = document.getElementById('upcomingList');
@@ -772,7 +708,6 @@ class UIManager {
             listContainer.innerHTML = html;
         }
         
-        // 渲染年份下拉選單
         const years = this.app.eventManager.getYearsList();
         const sel = document.getElementById('searchYear');
         sel.innerHTML = '<option value="">選擇年份...</option>';
@@ -795,7 +730,6 @@ class UIManager {
         });
     }
 
-    // --- Modal Logic ---
     openAddModal() {
         document.getElementById('eventForm').reset();
         document.getElementById('eventId').value = '';
@@ -807,7 +741,6 @@ class UIManager {
         document.getElementById('completedSection').style.display = 'none';
         document.getElementById('urlSafetyFeedback').innerHTML = '';
 
-        // 日期預設
         const currentDate = this.app.calendar.getDate();
         const today = new Date();
         let targetDate = (currentDate.getMonth() === today.getMonth()) ? today : currentDate;
@@ -816,7 +749,6 @@ class UIManager {
         document.getElementById('startDate').value = dStr;
         document.getElementById('endDate').value = dStr;
         
-        // 時間預設 (最近的15分)
         const r = 15 - (new Date().getMinutes() % 15);
         const now = new Date(); now.setMinutes(now.getMinutes() + r);
         const t = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
@@ -824,7 +756,7 @@ class UIManager {
         document.getElementById('endTime').value = t;
 
         this.mainCaptcha.generate();
-        document.getElementById('selectedColor').value = ''; // Reset
+        document.getElementById('selectedColor').value = ''; 
         this.toggleFormFields();
         this.modalEl.show();
     }
@@ -840,10 +772,8 @@ class UIManager {
         document.getElementById('eventType').value = type;
         document.getElementById('eventTitle').value = e.title;
 
-        // 恢復顏色
         if(e.backgroundColor) this.selectColor(e.backgroundColor);
 
-        // 判斷是否為過去活動
         const todayStr = DateUtils.getTodayString();
         this.isEditingPastActivity = false;
         if (e.start && type === 'activity') {
@@ -851,7 +781,6 @@ class UIManager {
             if (endStr <= todayStr) this.isEditingPastActivity = true;
         }
 
-        // 連結處理
         try {
             this.linkManager.setLinks(JSON.parse(props.linkUrl || '[]'));
         } catch {
@@ -867,7 +796,6 @@ class UIManager {
 
         this.toggleFormFields(); 
 
-        // 填充時間
         if(e.start) {
             const sStr = DateUtils.getLocalDateString(e.start);
             document.getElementById('startDate').value = sStr;
@@ -910,7 +838,6 @@ class UIManager {
             colorSection.style.display = 'block';
             completedSection.style.display = 'none';
             
-            // 恢復上次選擇的顏色 (僅新增時)
             if (!document.getElementById('eventId').value) {
                 const lastColor = localStorage.getItem('lastPersonColor');
                 const defaultColor = (lastColor && Config.COLORS_PERSON.includes(lastColor)) ? lastColor : Config.COLORS_PERSON[0];
@@ -926,7 +853,6 @@ class UIManager {
         document.getElementById('selectedColor').value = color;
     }
 
-    // --- Links Logic ---
     addLink() {
         try {
             const name = document.getElementById('linkName').value.trim();
@@ -980,12 +906,10 @@ class UIManager {
         }
     }
 
-    // --- Submit Logic ---
     handleFormSubmit(e) {
         e.preventDefault();
         if (!this.mainCaptcha.validate()) { Swal.fire({ icon: 'error', title: '驗證碼錯誤' }); return; }
 
-        // 自動加入未按 + 號的連結
         const pName = document.getElementById('linkName').value.trim();
         const pUrl = document.getElementById('linkUrl').value.trim();
         if (pName && pUrl) try { this.linkManager.addLink(pName, pUrl); } catch {}
@@ -1020,20 +944,26 @@ class UIManager {
         this.app.saveEvent(data, id ? 'update' : 'create');
     }
 
-    // --- Other Modals ---
     openDeleteLinkModal(index) {
-        this.reportCaptcha.generate(); // Reuse report captcha logic
+        // Force regenerate immediately when opening modal
+        const code = this.reportCaptcha.generate(); 
+        
         Swal.fire({
             title: '刪除連結確認',
             html: `
                 <p class="text-secondary mb-2">請輸入驗證碼以刪除此連結</p>
                 <div class="d-flex align-items-center mb-2">
-                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.reportCaptcha.currentCode}</div>
+                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${code}</div>
                     <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="app.ui.reportCaptcha.generate()"></i>
                 </div>
                 <input type="text" id="deleteLinkCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
             `,
             showCancelButton: true, confirmButtonText: '確認刪除', confirmButtonColor: '#d32f2f',
+            didOpen: () => {
+                // Re-bind captcha element inside Swal after it opens
+                // But since we put code in HTML string, it displays correctly.
+                // The generate() call inside onclick will work because CaptchaSystem now re-fetches elements.
+            },
             preConfirm: () => {
                 const input = document.getElementById('deleteLinkCaptchaInput').value;
                 if (input !== this.reportCaptcha.currentCode) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
@@ -1047,13 +977,13 @@ class UIManager {
     }
 
     openReportModal() {
-        this.reportCaptcha.generate();
+        const code = this.reportCaptcha.generate();
         Swal.fire({
             title: '回報問題',
             html: `
                 <textarea id="reportText" class="form-control mb-3" rows="4" placeholder="請描述您遇到的錯誤或建議..."></textarea>
                 <div class="d-flex align-items-center mb-2">
-                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${this.reportCaptcha.currentCode}</div>
+                    <div id="reportCaptchaDisplay" class="captcha-box flex-grow-1">${code}</div>
                     <i class="fa-solid fa-arrows-rotate refresh-icon" onclick="app.ui.reportCaptcha.generate()"></i>
                 </div>
                 <input type="text" id="reportCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
@@ -1089,12 +1019,9 @@ class App {
     }
 
     init() {
-        // Init Time Selects
         const opts = this.generateTimeOptions();
         document.getElementById('startTime').innerHTML = opts;
         document.getElementById('endTime').innerHTML = opts;
-
-        // Init Calendar
         this.initCalendar();
     }
 
@@ -1129,16 +1056,15 @@ class App {
             fixedWeekCount: false,      
             eventOrder: 'order,originalStart,title', 
             navLinks: true,
-            navLinkDayClick: (date) => jumpToDate(date),
+            navLinkDayClick: (date) => this.jumpToDate(date),
             events: (info, success, fail) => this.fetchEventsWrapper(info, success, fail),
             eventClick: (info) => {
-                if (info.view.type.includes('list')) jumpToDate(info.event.start);
+                if (info.view.type.includes('list')) this.jumpToDate(info.event.start);
                 else this.ui.openEditModal(info.event);
             },
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
         });
         this.calendar.render();
-        // 將 calendar 綁定回 ui，方便操作
         this.ui.jumpToDate = (d) => this.jumpToDate(d);
     }
 
@@ -1208,9 +1134,11 @@ class App {
 // ==========================================
 // 🚀 啟動 & Global Bridge (為了 HTML 相容性)
 // ==========================================
-const app = new App();
+let app; // Declare global variable
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize App only after DOM is ready
+    app = new App();
     app.init();
 });
 
