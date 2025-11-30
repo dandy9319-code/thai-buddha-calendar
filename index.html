@@ -1,10 +1,10 @@
-<!-- v2.26 | Fix: Unconditionally set End Date = Start Date for UX default (syncDates fix) | 2025-11-30 -->
+<!-- v2.28 | Cleanup: Remove stray text at the end of the document | 2025-11-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.26)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.28)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-            🍵 溫潤日系風格 (Warm & Cozy Style) - v2.26 Base
+            🍵 溫潤日系風格 (Warm & Cozy Style) - v2.28 Base
             ========================================= */
         :root {
             --bg-color: #FDFCF5;    
@@ -218,17 +218,17 @@
                 justify-content: space-between !important;
                 padding: 5px !important;
                 margin-bottom: 5px !important;
-                gap: 2px !important;
+                gap: 0px !important; /* [v2.27 Update] Reduce overall gap */
             }
-            /* [v2.21 Update] Ensure chunk gap is respected on mobile when possible */
-            .fc-toolbar-chunk { display: flex; align-items: center; gap: 4px; } 
-            .fc-toolbar-title { font-size: 1rem !important; margin: 0 4px !important; white-space: nowrap; }
+            /* [v2.27 Update] Further compress buttons and chunks */
+            .fc-toolbar-chunk { display: flex; align-items: center; gap: 1px; } 
+            .fc-toolbar-title { font-size: 0.9rem !important; margin: 0 3px !important; white-space: nowrap; } /* 標題字體再縮小 */
             
             .fc-button {    
-                padding: 0px 5px !important;    
-                font-size: 0.75rem !important;    
-                height: 24px !important;
-                line-height: 24px !important;
+                padding: 0px 3px !important; /* 壓縮水平內邊距 */
+                font-size: 0.65rem !important; /* 壓縮字體大小 */
+                height: 22px !important; /* 壓縮高度 */
+                line-height: 22px !important;
             }
 
             #stickyHeader {
@@ -595,8 +595,8 @@
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.26 Update] Application Version
-    static get VERSION() { return 'v2.26'; } 
+    // [v2.27 Update] Application Version
+    static get VERSION() { return 'v2.28'; } // <-- 已更新版本號
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
