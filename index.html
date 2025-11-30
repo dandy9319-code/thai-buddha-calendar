@@ -1,10 +1,10 @@
-<!-- v2.18 | More-Link Positioned Top-Left (Natural Flow) | 2025-11-30 -->
+<!-- v2.19 | Fix Date Range Restriction & Title Update | 2025-11-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國佛堂_共用行事曆</title>
+    <title>泰國天茂佛堂_共同行事曆</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.18
+           🍵 溫潤日系風格 (Warm & Cozy Style) - v2.18 Base
            ========================================= */
         :root {
             --bg-color: #FDFCF5;        
@@ -187,6 +187,7 @@
             text-decoration: none !important;
             display: inline-block;
             opacity: 0.9;
+            width: 100%;
         }
         .fc-more-link:hover { color: var(--text-primary) !important; opacity: 1; background-color: rgba(0,0,0,0.03); }
 
@@ -334,7 +335,7 @@
         .highlight-target-day { animation: flash-highlight 2.5s ease-out; position: relative; z-index: 10; }
         
         .person-pill { display: inline-block !important; width: auto !important; margin-right: 4px !important; white-space: nowrap; font-weight: 500; color: #5D4037 !important; background-color: var(--event-color, #eee); }
-        
+        .event-type-activity { background-color: #F8BBD0; border-left: 4px solid #EC407A !important; color: #5D4037 !important; font-weight: bold; width: 100% !important; display: block !important; margin-bottom: 2px !important; }
         .hide-time-text .fc-event-time { display: none !important; }
         .fc-daygrid-day-events { display: flex !important; flex-wrap: wrap !important; align-content: flex-start !important; gap: 1px !important; padding: 0 2px !important; margin-top: 0 !important; }
         .fc-daygrid-event-harness { width: auto !important; max-width: 100%; }
@@ -393,7 +394,7 @@
 
 <div class="container">
     <div id="stickyHeader" class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <h2><i class="fa-solid fa-calendar-days me-2" style="color: #A1887F;"></i>泰國佛堂_共用行事曆</h2>
+        <h2><i class="fa-solid fa-calendar-days me-2" style="color: #A1887F;"></i>泰國天茂佛堂_共同行事曆</h2>
         <button class="btn btn-custom-add" onclick="openAddModal()">
             <i class="fa-solid fa-plus me-1"></i> 新增資料
         </button>
@@ -516,13 +517,13 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.17
+// 🏗️ 系統架構 (System Architecture) - v2.19
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.17] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
+    // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; } 
     // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() { 
@@ -1025,7 +1026,22 @@ class UIManager {
 
     handleFormSubmit(e) {
         e.preventDefault();
-        if (!this.mainCaptcha.validate()) { Swal.fire({ icon: 'error', title: '驗證碼錯誤' }); return; }
+        if (document.getElementById('captchaInput').value !== this.mainCaptcha.currentCode) {
+            Swal.fire({ icon: 'error', title: '驗證碼錯誤' }); return;
+        }
+
+        const sDate = document.getElementById('startDate').value;
+        const eDate = document.getElementById('endDate').value;
+        
+        // [v2.19 Fix] 檢查結束日期是否早於開始日期 (表單驗證層級)
+        if (sDate > eDate) {
+            Swal.fire({
+                icon: 'error',
+                title: '日期範圍錯誤',
+                text: '結束日期不能早於開始日期，請重新選擇。'
+            });
+            return;
+        }
 
         const pName = document.getElementById('linkName').value.trim();
         const pUrl = document.getElementById('linkUrl').value.trim();
@@ -1033,8 +1049,6 @@ class UIManager {
 
         const id = document.getElementById('eventId').value;
         const type = document.getElementById('eventType').value;
-        const sDate = document.getElementById('startDate').value;
-        const eDate = document.getElementById('endDate').value;
         
         let startStr, endStr;
         if (type === 'activity') {
@@ -1062,7 +1076,6 @@ class UIManager {
     }
 
     openDeleteLinkModal(index) {
-        // Force regenerate immediately when opening modal
         const code = this.reportCaptcha.generate(); 
         
         Swal.fire({
@@ -1076,11 +1089,7 @@ class UIManager {
                 <input type="text" id="deleteLinkCaptchaInput" class="form-control" placeholder="請輸入上方驗證碼">
             `,
             showCancelButton: true, confirmButtonText: '確認刪除', confirmButtonColor: '#d32f2f',
-            didOpen: () => {
-                // Re-bind captcha element inside Swal after it opens
-                // But since we put code in HTML string, it displays correctly.
-                // The generate() call inside onclick will work because CaptchaSystem now re-fetches elements.
-            },
+            didOpen: () => {},
             preConfirm: () => {
                 const input = document.getElementById('deleteLinkCaptchaInput').value;
                 if (input !== this.reportCaptcha.currentCode) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
@@ -1317,11 +1326,25 @@ window.refreshReportCaptcha = () => app.ui.reportCaptcha.generate();
 window.confirmDelete = () => app.ui.confirmDelete();
 window.addLinkToLocal = () => app.ui.addLink();
 window.checkUrlSafety = (v) => app.ui.checkUrlSafety(v);
+window.toggleFormFields = () => app.ui.toggleFormFields();
+window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
+
+// [v2.10] Fix syncDates to allow immediate end date update (Initial logic)
+// [v2.19 Update] Extended logic: Set 'min' attribute on end date
 window.syncDates = () => {
     const s = document.getElementById('startDate').value;
     const e = document.getElementById('endDate');
-    if(!e.value || e.value < s) e.value = s;
+    
+    // 1. Set min attribute for end date (UI Constraint)
+    e.min = s; 
+
+    // 2. Auto-correct if invalid
+    if (!e.value || e.value < s) {
+        e.value = s;
+    }
 };
+
+// [v2.10] Add missing syncTimes for HTML compatibility
 window.syncTimes = () => {
     const sDate = document.getElementById('startDate').value;
     const eDate = document.getElementById('endDate').value;
@@ -1330,15 +1353,6 @@ window.syncTimes = () => {
         const eTime = document.getElementById('endTime');
         if(eTime.value < sTime) eTime.value = sTime;
     }
-};
-window.toggleFormFields = () => app.ui.toggleFormFields();
-window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
-
-// [v2.10] Fix syncDates to allow immediate end date update
-window.syncDates = () => {
-    const s = document.getElementById('startDate').value;
-    const e = document.getElementById('endDate');
-    e.value = s;
 };
 
 </script>
