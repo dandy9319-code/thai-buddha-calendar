@@ -1,10 +1,10 @@
-<!-- v2.30 | Final Fix: Conditional UX Reset in syncDates, separating user interaction from programmatic load | 2025-11-30 -->
+<!-- v2.33 | Feature: Custom QR Code & Restore List View Date Format | 2025-12-01 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.30)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.33)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,7 +17,7 @@
     
     <style>
         /* =========================================
-            🍵 溫潤日系風格 (Warm & Cozy Style) - v2.28 Base
+            🍵 溫潤日系風格 (Warm & Cozy Style) - v2.32 Base
             ========================================= */
         :root {
             --bg-color: #FDFCF5;    
@@ -210,16 +210,40 @@
             body { background-color: #FFFFFF; }    
             .container { max-width: 100%; margin: 0; padding: 0; overflow-x: hidden; }
             
-            /* Header */
+            /* [v2.27 & v2.31 Fix] Calendar Header Two-Line Display */
             .fc-header-toolbar {
                 display: flex !important;
-                flex-wrap: nowrap !important;
+                flex-wrap: wrap !important; /* Force wrap */
                 align-items: center !important;
                 justify-content: space-between !important;
                 padding: 5px !important;
                 margin-bottom: 5px !important;
-                gap: 0px !important; /* [v2.27 Update] Reduce overall gap */
+                gap: 0px !important; 
             }
+            
+            /* Center chunk (prev, title, next) to occupy the first line (100%) */
+            .fc-header-toolbar .fc-toolbar-chunk:nth-child(2) {
+                order: 1; 
+                flex-basis: 100%;
+                margin-bottom: 5px;
+                justify-content: space-between;
+            }
+            
+            /* Left chunk (myToday) to start the second line */
+            .fc-header-toolbar .fc-toolbar-chunk:nth-child(1) {
+                order: 2; 
+                flex-basis: auto;
+                justify-content: flex-start;
+                margin-right: auto !important; /* Push view buttons to the right */
+            }
+            
+            /* Right chunk (views) to end the second line */
+            .fc-header-toolbar .fc-toolbar-chunk:nth-child(3) {
+                order: 3;
+                flex-basis: auto;
+                justify-content: flex-end;
+            }
+
             /* [v2.27 Update] Further compress buttons and chunks */
             .fc-toolbar-chunk { display: flex; align-items: center; gap: 1px; } 
             .fc-toolbar-title { font-size: 0.9rem !important; margin: 0 3px !important; white-space: nowrap; } /* 標題字體再縮小 */
@@ -329,15 +353,15 @@
             }
             .btn-custom-add i { font-size: 1.4rem !important; margin: 0 !important; display: block !important; }
             
-            /* [v2.20 Update] Report container alignment for mobile */
+            /* [v2.32 Update] Change justification: Buttons Left, Version Right */
             .report-bug-container {    
-                justify-content: flex-start !important;    
+                justify-content: space-between !important;    
                 padding-left: 20px;    
                 padding-bottom: 40px;    
                 margin-top: 5px;    
                 display: flex; /* Ensure items are inline */
                 align-items: center;
-                gap: 10px; /* Space between version and button */
+                gap: 10px; 
             }
             .btn-report-bug { background-color: #f0f0f0; color: #999; font-size: 0.75rem; padding: 4px 12px; box-shadow: none; border: 1px solid #ddd; }
         }
@@ -364,10 +388,31 @@
         .btn-report-bug { background-color: #90A4AE; color: white; padding: 8px 20px; border-radius: 30px; border: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-report-bug:hover { background-color: #78909C; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
         
-        /* [v2.20 Update] Ensure desktop/tablet alignment */
+        /* [v2.31 New] Share Button Style */
+        .btn-share { 
+            background-color: #4DB6AC; /* Teal/Share color */
+            color: white; 
+            padding: 8px 20px; 
+            border-radius: 30px; 
+            border: none; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            font-size: 0.95rem; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s; 
+        }
+        .btn-share:hover { 
+            background-color: #26A69A; 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+        }
+
+        /* [v2.32 Update] Desktop/Global: Justify space-between for Left(Buttons) & Right(Version) */
         .report-bug-container { 
             display: flex; 
-            justify-content: flex-start; 
+            justify-content: space-between; 
             margin-top: 20px; 
             padding-bottom: 20px; 
             width: 100%; 
@@ -505,11 +550,17 @@
 
     <!-- 回報按鈕 (移至底部固定流 - 靠左) -->
     <div class="report-bug-container">
-        <!-- [v2.20 New] Display Version -->
+        <!-- [v2.32 New Layout] Left side: Report & Share -->
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn-report-bug" onclick="openReportModal()">
+                <i class="fa-solid fa-bug"></i> 回報問題
+            </button>
+            <button class="btn-share" onclick="openShareModal()">
+                <i class="fa-solid fa-share-nodes"></i> 分享
+            </button>
+        </div>
+        <!-- Right side: Version -->
         <span id="appVersionDisplay" class="text-secondary small fw-bold"></span>
-        <button class="btn-report-bug" onclick="openReportModal()">
-            <i class="fa-solid fa-bug"></i> 回報問題
-        </button>
     </div>
 </div>
 
@@ -590,14 +641,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.30
+// 🏗️ 系統架構 (System Architecture) - v2.33
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.30 Update] Application Version
-    static get VERSION() { return 'v2.30'; } 
+    // [v2.33 Update] Application Version
+    static get VERSION() { return 'v2.33'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -617,6 +668,14 @@ class Config {
             '#ECEFF1'  // Blue Grey
         ];
     }
+    // [v2.31 New] Share Config
+    static get SHARE_URL() { return 'https://reurl.cc/oK5Arj'; }
+    // [v2.33 New] Embedded Custom QR Code (Base64) - Replaces QR_CODE_API
+    static get QR_CODE_BASE64() { 
+        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAuGSURBVHhe7d1bixxXFcbx32SSTIxJjDExiTe84IXgD+hFvRBEvPAiKqIIIgouogcE0YCKImgUFERB8EIQFa+880YQ1IsgXnkTExM105lM1v+b/8x01dSp6qrq6q76/eGBpGequ2rXf9epU+d0dc9/f/VqAgCAWf32yW88/0/976t/S7/67UvpN8/9Jb386r+n5198e/r1b95Mv/3t29Pvf/+39Ie/vDP96a+vT3/5+xvT3/7xZvrH26+mf77zavrnf15J//ovf2/+t7/9ffrnf76a/vH2q+lv//h7+tvf35z+8rfXpz/99U/pD395e/r9H/6Wfvubt6fn/5qf+9y/pudf/Gv61W9/n37z3F/S//76t/TSq/9Ov/rt79P//vq39IuX/5oee/yJ9Mhjj0+PPf7E9Ktf/2Z67Ikn00uvvJqef/Evi++J874vXn4lPf7Ek+mxx59Ijz/+RHr8iSfTy6/+O730yqvppVf+nZ5//q/pl7/6zTR//sW/ppdffjU9/sST6fEnnkhPPPmX9Mtf/Wb2793198T53/eL/7f/4+V/phdffCX94uV/ppdffjU9+uRT0/z5H3v8ifT4E0+mJ558Mr388qvppVdeTS+98u/0/PN/Tb/81W+m+fMv/jW9/PKr6fEnnkyPP/FEeuLJP6df/uo302OPPzH94uV/pl/8/2d3/j03//v8ffHlV9ITTz6ZnnjyyfT4E0+ml19+Nb30yqvppVf/nZ5//q/pl7/6zTR//sW/ppdffjU9/sST6fEnnkhPPPmX9Mtf/WZ67PEnpl/8v//9t7/759t/2b3/3b/c/svu/e++5+fb7/v59vv+/v2/2H7fL/9y++8ff+LJ9P5H2y//9f+2X/6b3/81/fWfb05/+9ub0z/efjX98z+vpH/9lz/b/O//vJr+8faraX5P83vy9/T7P/wt/e73b0/z9/X8X/Nz83s66/f02BNPpt/94c/p56+8mn7x8ivp17/9ffr1b36fHn/iyfT+h//ffvmv/7f98t/8/q/prz/fnP72tzenf7z9avrXf15J//ovf7b53/95Nf3j7VfT3/7xZvrL316f/vjnW9Pv//i39Lvf/T09/+Lf0q9++7v02BNPpt//4c/ppVdeTb94+ZX069/+Pv36N79Pjz3+RHr/o+2X//p/2y//ze//mv76zzenn//X/9t++W9+//f013++Of3tb29O/3j71fTP/7yS/vVf/mzzv//zavrHO6+mv/3jzfSXP9+cfv/H29Pv//D39Lvf/S09/+Lf0q9++7v069/8Pr30yqvppVf/k37x8j/Tr377u/TEE0+m9z/afvmv/7f98t/8/u/pr/98c/rb396c/vH2q+mf/3kl/eu//Nnmf//n1fSPt19Nf/vHm+kvf3t9+uOfb02///it6Xe/+3t6/sW/pV/99nfpiSefTC+98mr6xcuvpF//9vfp17/5fXrs8SfS+x9tv/zX/9t++W9+/9f013++Of3tb29O/3j71fTP/7yS/vVf/mzzv//zavrHO6+mv/3jzfSXP9+cfv/H29Pv//D39Lvf/S09/+Lf0q9++7v0xJNPppde/U/6xcuvpF/99nfpiSefTO9/tP3yX/9v++W/+f3f01//+eb0t7+9Of3j7VfTP//zSvrXf/mzzf/+z6vpH2+/mv72jzfTX/72+vTHP9+afv/xW9Pvfvd39PyLf0u/+u3v0hNPPpledJ847/vi5VfSr3/7+/Tr3/w+Pfb4E+n9j7Zf/uv/bb/8N7//a/rrP9+c/va3N6d/vP1q+ud/Xkn/+i9/tvnf/3k1/eOdV9Pf/vFm+sufb06//+Pt6fd/+Hv63e/+lp5/8W/pV7/9XXriSffE+d/30qv/Sb94+ZX0q9/+Lj3x5JPp/Y+2X/7r/22//De//3v66z/fnP72tzenf7z9avrT//p/2y//ze//nv76zzenv/3tzekfb7+a/vmfV9K//sufbf73f15N/3j71fS3f7yZ/vK316c//vnW9PuP35p+97u/p+df/Fv61W9/l5548sn00iuvpl+8/Er69W9/n379m9+nxx5/Ir3/0fbLf/2/7Zf/5vd/TX/955vT3/725vSPt19N//zPK+lf/+XPNv/7P6+mf7zzavrbP95Mf/nzzenn//X/tl/+m9//Pf31n29Of/vbm9M/3n41/fM/r6R//Zc/2/zv/7ya/vH2q+lv/3gz/eVvr09//POt6fcfvzX97nd/T8+/+Lf0q9/+Lj3x5JPppVf/k37x8ivpV7/9XXriSSfS+9v8+8ffE+d/3y/+3/7b3/09Pf/i39Kvfv/39N+P35p+//Fb05/+9ub0t7+9Of3j7VfTP//zSvrXf/mzzf/+z6vpH2+/mv72jzfTX/72+vTHP9+afv/xW9Pvfvf39PyLf0u/+u3v0hNPPpledJ847/vi5VfSr3/7+/Tr3/w+Pfb4E+n9j7Zf/uv/bb/8N7//a/rrP9+c/va3N6d/vP1q+ud/Xkn/+i9/tvnf/3k1/ePtV9Pf/vFm+svfXp/++Odb0+8/fmv63e/+np5/8W/pV7/9XXriSfeJ87/vpVf/k37x8ivpV7/9XXriSSfS+9t84smn0hNP/jn98le/mR57/InpFy//M/3i/z9d//3jT6THn3gyPfHEk+nll19NL73ySnrplX+n55//a/rlr34zzZ9/8a/p5ZdfTY8/8WR6/Ikn0hNP/iX98le/mf17d/09cf73/eL/7f94+Z/pxRd7nnjyyfTEk39Ov/zVb6bHnnhi+sXL/0y/+H/7f/vHf09//eeb09/+9ub0j7dfTf/8zyvpX//lzzb/+z+vpn+8/Wr62z/eTH/52+vTH/98a/r9x29Nv/vd39PzL/4t/eq3v0tPPPnk7N/T8y/+Nf3yt79P//vr39JLr/47/eq3v0//++vf0i9e/mt67PEn0iOPPT499vgT069+/ZvpMSeM6W/0f2N78/d57wAAAABJRU5ErkJggg==';
+    }
+    // [v2.31 New] Share Config
+    static get SHARE_URL() { return 'https://reurl.cc/oK5Arj'; }
 }
 
 // 2. DateUtils: 日期工具 (Pure Functions)
@@ -970,6 +1029,7 @@ class UIManager {
         
         // [v2.30 Change] 載入時不設定 UX 預設，避免覆蓋多日活動。
         // 而是依賴 syncDates 內的檢查 logic (v2.29)
+        originalStartDate = dStr; // 初始化原始開始日期
         window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
         
         this.modalEl.show();
@@ -1027,11 +1087,37 @@ class UIManager {
         }
 
         // [v2.30 Change] 載入時不設定 UX 預設，依賴 syncDates 處理載入邏輯。
+        originalStartDate = document.getElementById('startDate').value; // 設定原始開始日期
         window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
         
         this.mainCaptcha.generate();
         this.modalEl.show();
     }
+    
+    // [v2.31 New] Share Modal Method
+    openShareModal() {
+        // [v2.33 Update] Use the Base64 image instead of the external API
+        const qrUrl = Config.QR_CODE_BASE64;
+
+        Swal.fire({
+            title: '分享共同行事曆',
+            html: `
+                <div class="text-center p-3">
+                    <p class="text-secondary mb-3">掃描此 QR Code 或點擊下方連結分享給道親</p>
+                    <img src="${qrUrl}" alt="QR Code" style="width:200px; height:200px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
+                    <div class="input-group">
+                        <input type="text" id="shareLinkInput" class="form-control" value="${Config.SHARE_URL}" readonly>
+                        <button class="btn btn-primary" onclick="copyShareLink()">複製連結</button>
+                    </div>
+                    <small class="text-muted d-block mt-2">${Config.SHARE_URL}</small>
+                </div>
+            `,
+            showConfirmButton: false,
+            showCloseButton: true,
+            width: '400px'
+        });
+    }
+
 
     toggleFormFields() {
         const type = document.getElementById('eventType').value;
@@ -1296,6 +1382,20 @@ class App {
                     }
                 }
             },
+            
+            // [v2.32 New] Customize Day Headers: Strip "週" from text
+            dayHeaderContent: (args) => {
+                return args.text.replace('週', '');
+            },
+            
+            // [v2.33 Fix] Remove specific 'list' view customization to restore default date format (e.g., full date string)
+            // which typically includes better formatting than the forced 'narrow' style.
+            // views: {
+            //    list: {
+            //        listDayFormat: { month: 'long', day: 'numeric', year: 'numeric', weekday: 'narrow' }
+            //    }
+            // },
+
             eventDisplay: 'block',
             // [v1.9] Height logic moved to adjustCalendarLayout
             height: 'auto',
@@ -1429,6 +1529,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // Bridge functions for HTML onclick attributes
 window.openAddModal = () => app.ui.openAddModal();
 window.openReportModal = () => app.ui.openReportModal();
+window.openShareModal = () => app.ui.openShareModal(); // [v2.31 New]
+window.copyShareLink = () => { // [v2.31 New]
+    const copyText = document.getElementById("shareLinkInput");
+    copyText.select();
+    document.execCommand('copy');
+    Swal.fire({
+        icon: 'success',
+        title: '已複製！',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500
+    });
+};
 window.jumpToDate = (d) => app.jumpToDate(d);
 window.jumpToSelectedEvent = () => {
     const val = document.getElementById('searchResult').value;
@@ -1451,17 +1565,16 @@ let originalStartDate = '';
 // [v2.30 New] Bridge function to capture user change event and set the flag
 window.handleStartChange = () => {
     const s = document.getElementById('startDate').value;
-    const isUserInteraction = (s !== originalStartDate); // 判斷值是否真的被使用者變動了
-    
-    // 立即將 UX 重設為單日
-    if (isUserInteraction) {
+    // 檢查使用者是否真的變動了日期（不是程式碼在背景設定）
+    if (s !== originalStartDate) {
+        // 立即將 UX 重設為單日
         document.getElementById('endDate').value = s;
         // 更新原始值，避免下次其他欄位變動時被判斷為開始日期變動
         originalStartDate = s;
     }
     
     // 執行約束檢查 (確保結束日期 >= 開始日期，並同步時間)
-    window.syncDates(true); // 傳遞 true 旗標表示是使用者互動
+    window.syncDates(true); 
 };
 
 
@@ -1473,7 +1586,7 @@ window.syncDates = (isUserInteraction) => {
     
     // 1. 設定最小日期約束 (UI Constraint)
     e.min = s;    
-    
+
     // 2. 只有在「結束日期」無效 (或比開始日期早) 時，才將其設為開始日期。
     // 這確保了：
     // a) 編輯多日活動時，結束日期會被保留（9/15 > 9/9 -> false -> 保留 9/15）。
