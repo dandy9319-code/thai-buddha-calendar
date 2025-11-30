@@ -1,10 +1,10 @@
-<!-- v2.28 | Cleanup: Remove stray text at the end of the document | 2025-11-30 -->
+<!-- v2.30 | Final Fix: Conditional UX Reset in syncDates, separating user interaction from programmatic load | 2025-11-30 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.28)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.30)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -555,7 +555,8 @@
                     </div>
                     <div class="row mb-3">
                         <label class="form-label text-secondary small fw-bold">開始</label>
-                        <div class="col-7"><input type="date" class="form-control" id="startDate" required onchange="syncDates()"></div>
+                        <!-- [v2.30 Change]: Use bridge function to handle UX logic -->
+                        <div class="col-7"><input type="date" class="form-control" id="startDate" required onchange="handleStartChange()"></div>
                         <div class="col-5 time-field-group"><select class="form-select" id="startTime" onchange="syncTimes()"></select></div>
                     </div>
                     <div class="row mb-3">
@@ -589,14 +590,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.26
+// 🏗️ 系統架構 (System Architecture) - v2.30
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.27 Update] Application Version
-    static get VERSION() { return 'v2.28'; } // <-- 已更新版本號
+    // [v2.30 Update] Application Version
+    static get VERSION() { return 'v2.30'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -967,9 +968,9 @@ class UIManager {
         document.getElementById('selectedColor').value = '';    
         this.toggleFormFields();
         
-        // [v2.24 Fix] Explicitly call syncDates after setting dates/times
-        // [v2.25 Improvement]: syncDates now ensures syncTimes runs.
-        window.syncDates(); 
+        // [v2.30 Change] 載入時不設定 UX 預設，避免覆蓋多日活動。
+        // 而是依賴 syncDates 內的檢查 logic (v2.29)
+        window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
         
         this.modalEl.show();
     }
@@ -1015,7 +1016,7 @@ class UIManager {
             if (type === 'person') {
                 const eStrRaw = e.end ? DateUtils.getLocalDateString(e.end) : sStr;
                 const correctEnd = DateUtils.addDaysToDateString(eStrRaw, -1);
-                document.getElementById('endDate').value = correctEnd;
+                document.getElementById('endDate').value = correctEnd; 
             } else {
                 document.getElementById('startTime').value = e.start.substring(11, 16);
                 if(e.end) {
@@ -1025,9 +1026,8 @@ class UIManager {
             }
         }
 
-        // [v2.24 Fix] Explicitly call syncDates after setting dates/times
-        // [v2.25 Improvement]: syncDates now ensures syncTimes runs.
-        window.syncDates(); 
+        // [v2.30 Change] 載入時不設定 UX 預設，依賴 syncDates 處理載入邏輯。
+        window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
         
         this.mainCaptcha.generate();
         this.modalEl.show();
@@ -1444,19 +1444,47 @@ window.checkUrlSafety = (v) => app.ui.checkUrlSafety(v);
 window.toggleFormFields = () => app.ui.toggleFormFields();
 window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
 
-// [v2.10] Fix syncDates to allow immediate end date update (Initial logic)
-// [v2.26 UX Improvement] Unconditionally set End Date = Start Date to default to single day event.
-window.syncDates = () => {
+
+// [v2.30 New] Global variable to store the original start date value for comparison
+let originalStartDate = ''; 
+
+// [v2.30 New] Bridge function to capture user change event and set the flag
+window.handleStartChange = () => {
+    const s = document.getElementById('startDate').value;
+    const isUserInteraction = (s !== originalStartDate); // 判斷值是否真的被使用者變動了
+    
+    // 立即將 UX 重設為單日
+    if (isUserInteraction) {
+        document.getElementById('endDate').value = s;
+        // 更新原始值，避免下次其他欄位變動時被判斷為開始日期變動
+        originalStartDate = s;
+    }
+    
+    // 執行約束檢查 (確保結束日期 >= 開始日期，並同步時間)
+    window.syncDates(true); // 傳遞 true 旗標表示是使用者互動
+};
+
+
+// [v2.29 Fix] Revert logic to correct invalid range only, preserving multi-day events on load.
+// [v2.30 Change] 接受一個參數 `isUserInteraction`：若為 true，則執行 UX 重設；若為 false (載入時)，則只執行範圍約束檢查。
+window.syncDates = (isUserInteraction) => {
     const s = document.getElementById('startDate').value;
     const e = document.getElementById('endDate');
     
-    // 1. Set min attribute for end date (UI Constraint)
+    // 1. 設定最小日期約束 (UI Constraint)
     e.min = s;    
-
-    // 2. [v2.26 Change] 無條件將結束日期設定為開始日期 (UX 優化：預設單日活動)
-    e.value = s;
     
-    // 3. After date changes/corrections, check if time constraint needs adjusting.
+    // 2. 只有在「結束日期」無效 (或比開始日期早) 時，才將其設為開始日期。
+    // 這確保了：
+    // a) 編輯多日活動時，結束日期會被保留（9/15 > 9/9 -> false -> 保留 9/15）。
+    // b) 如果使用者將開始日期改成 9/16，舊的結束日期 9/15 會失效，這裡必須修正。
+    // c) 只有在使用者互動時，才執行 UX 預設（見 handleStartChange）
+
+    if (!e.value || e.value < s) {
+        e.value = s;
+    }
+    
+    // 3. 檢查時間約束 (當日期相等時)
     window.syncTimes();
 };
 
