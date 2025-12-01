@@ -1,10 +1,10 @@
-<!-- v2.40 | Fix: Use Drive Thumbnail API & Add Auto-Fallback | 2025-12-01 -->
+<!-- v2.46 | Fix: Force TW Display in UTC Env & Explicit +08:00 Storage | 2025-12-01 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.40)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.46)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -580,12 +580,30 @@
                         <label class="form-label text-secondary small fw-bold">開始</label>
                         <!-- [v2.30 Change]: Use bridge function to handle UX logic -->
                         <div class="col-7"><input type="date" class="form-control" id="startDate" required onchange="handleStartChange()"></div>
-                        <div class="col-5 time-field-group"><select class="form-select" id="startTime" onchange="syncTimes()"></select></div>
+                        <div class="col-5 time-field-group"><select class="form-select" id="startTime" onchange="syncTimes(); updateTimezoneHint();"></select></div>
                     </div>
                     <div class="row mb-3">
                         <label class="form-label text-secondary small fw-bold">結束</label>
                         <div class="col-7"><input type="date" class="form-control" id="endDate" required></div>
                         <div class="col-5 time-field-group"><select class="form-select" id="endTime"></select></div>
+                    </div>
+
+                    <!-- [v2.42 New] Timezone Selector Block -->
+                    <div class="mb-3 time-field-group">
+                        <label class="form-label text-secondary small fw-bold">時區選擇</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="eventTimezone" id="tzTaiwan" value="TW" checked onchange="updateTimezoneHint()">
+                                <label class="form-check-label" for="tzTaiwan">🇹🇼 台灣時間</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="eventTimezone" id="tzThai" value="TH" onchange="updateTimezoneHint()">
+                                <label class="form-check-label" for="tzThai">🇹🇭 泰國時間</label>
+                            </div>
+                        </div>
+                        <div id="timezoneHint" class="form-text text-primary" style="display:none; font-size: 0.8rem; margin-top: 5px;">
+                            <i class="fa-solid fa-circle-info me-1"></i>將自動轉換並顯示為台灣時間 <span id="convertedTimeDisplay" class="fw-bold"></span>
+                        </div>
                     </div>
 
                     <div class="mb-3" id="colorSection">
@@ -613,14 +631,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.40
+// 🏗️ 系統架構 (System Architecture) - v2.46
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.40 Update] Application Version
-    static get VERSION() { return 'v2.40'; } 
+    // [v2.46 Update] Application Version
+    static get VERSION() { return 'v2.46'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -673,6 +691,35 @@ class DateUtils {
 
     static getTodayString() {
         return this.getLocalDateString(new Date().toISOString());
+    }
+
+    // [v2.46 Update] Robust parser for Taiwan Time Strings with implicit or explicit timezone
+    static parseTaiwanDateTime(isoStr) {
+        if (!isoStr) return null;
+        
+        let cleanStr = isoStr;
+        // Strip existing offset or Z to treat numbers as absolute Taiwan digits
+        if (cleanStr.includes('Z')) cleanStr = cleanStr.replace('Z', '');
+        cleanStr = cleanStr.replace(/[\+\-]\d{2}:?\d{2}$/, ''); 
+        
+        // Match standard ISO format YYYY-MM-DDTHH:mm...
+        const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+        if (!match) return null;
+
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10) - 1; // JS Month is 0-indexed
+        const d = parseInt(match[3], 10);
+        const h = parseInt(match[4], 10);
+        const min = parseInt(match[5], 10);
+
+        // 1. Create UTC timestamp from digits (Treating digits as GMT+0)
+        const utcMs = Date.UTC(y, m, d, h, min);
+
+        // 2. Shift by -8 Hours to represent the actual moment in time (since digits were GMT+8)
+        const taiwanOffsetMs = 8 * 60 * 60 * 1000;
+        const absoluteTimeMs = utcMs - taiwanOffsetMs;
+
+        return new Date(absoluteTimeMs);
     }
 }
 
@@ -830,10 +877,6 @@ class EventManager {
                 if (isActivity) classList.push('event-type-activity');
                 else classList.isActivity ? classList.push('event-type-activity') : classList.push('person-pill');
                 
-                // Note: The exploded events here are for FullCalendar rendering, and use 
-                // classNames based on event type. The new dashboard styling is applied directly 
-                // during dashboard rendering in UIManager.
-                
                 exploded.push({
                     id: item.id,
                     title: item.title,
@@ -918,15 +961,39 @@ class UIManager {
             if (activities.length > 0) {
                 html += `<div class="section-label">近期活動</div>`;
                 activities.forEach(e => {
-                    const d = DateUtils.getLocalDateString(e.start);
-                    const t = e.start.substring(11, 16);
+                    // [v2.46 Fix] Robust Dashboard Timezone Display
+                    let dStr = 'NAN', tStr = 'NAN';
+                    const eventTime = DateUtils.parseTaiwanDateTime(e.start);
+
+                    if (eventTime && !isNaN(eventTime.getTime())) {
+                        // Check if system is in UTC (preview/server env)
+                        const isUTCSystem = new Date().getTimezoneOffset() === 0;
+                        
+                        if (isUTCSystem) {
+                            // FORCE Display as Taiwan Time (+8) if system is UTC
+                            // This prevents "3 AM" display in preview windows
+                            const twTime = new Date(eventTime.getTime() + (8 * 60 * 60 * 1000));
+                            dStr = twTime.toISOString().substring(0, 10);
+                            tStr = twTime.toISOString().substring(11, 16);
+                        } else {
+                            // Normal Browser: Display Local Time (Taiwan or Thailand)
+                            dStr = eventTime.getFullYear() + '-' + 
+                                      String(eventTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                                      String(eventTime.getDate()).padStart(2, '0');
+                                      
+                            tStr = String(eventTime.getHours()).padStart(2, '0') + ':' + 
+                                      String(eventTime.getMinutes()).padStart(2, '0');
+                        }
+                    } else {
+                        // Fallback
+                        dStr = e.start.substring(0, 10);
+                        tStr = e.start.includes('T') ? e.start.substring(11, 16) : '00:00';
+                    }
                     
-                    // [v2.22 R1] Apply activity colors/borders and ensure layout
-                    // Note: Activity buttons remain full-width.
                     html += `<button class="btn dashboard-btn btn-act" style="background-color:#ffe9f3; color:#5D4037; border-left: 4px solid #fa436b !important; font-weight: bold;" onclick="jumpToDate('${e.start}')">
                                      <div style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
                                           <strong>${e.title}</strong>
-                                          <small class="person-date-text" style="font-weight: bold;">${d} ${t}</small>
+                                          <small class="person-date-text" style="font-weight: bold;">${dStr} ${tStr}</small>
                                      </div>
                              </button>`;
                 });
@@ -993,6 +1060,10 @@ class UIManager {
         document.getElementById('startTime').value = t;    
         document.getElementById('endTime').value = t;
 
+        // [v2.42 New] Default timezone to Taiwan
+        document.getElementById('tzTaiwan').checked = true;
+        this.updateTimezoneHint();
+
         this.mainCaptcha.generate();
         document.getElementById('selectedColor').value = '';    
         this.toggleFormFields();
@@ -1040,6 +1111,10 @@ class UIManager {
 
         this.toggleFormFields();    
 
+        // [v2.42] Edit Mode Default Timezone: Always start with System Time (Taiwan)
+        document.getElementById('tzTaiwan').checked = true;
+        this.updateTimezoneHint();
+
         if(e.start) {
             const sStr = DateUtils.getLocalDateString(e.start);
             document.getElementById('startDate').value = sStr;
@@ -1048,10 +1123,24 @@ class UIManager {
                 const correctEnd = DateUtils.addDaysToDateString(eStrRaw, -1);
                 document.getElementById('endDate').value = correctEnd; 
             } else {
-                document.getElementById('startTime').value = e.start.substring(11, 16);
+                // [v2.41 Fix] Robust time extraction for Date objects or ISO Strings
+                const getTimeString = (val) => {
+                    if (!val) return '00:00';
+                    const d = new Date(val); 
+                    if (isNaN(d.getTime())) return '00:00';
+                    const h = d.getHours().toString().padStart(2, '0');
+                    const m = d.getMinutes().toString().padStart(2, '0');
+                    return `${h}:${m}`;
+                };
+
+                document.getElementById('startTime').value = getTimeString(e.start);
+                
                 if(e.end) {
                     document.getElementById('endDate').value = DateUtils.getLocalDateString(e.end);
-                    document.getElementById('endTime').value = e.end.substring(11, 16);
+                    document.getElementById('endTime').value = getTimeString(e.end);
+                } else {
+                    document.getElementById('endDate').value = sStr;
+                    document.getElementById('endTime').value = getTimeString(e.start);
                 }
             }
         }
@@ -1066,10 +1155,6 @@ class UIManager {
     
     // [v2.31 New] Share Modal Method
     openShareModal() {
-        // [v2.38 Update] Use CUSTOM_QR_IMAGE_URL for Image, and SHARE_URL for Input Text
-        // [v2.40 Fix] Enhanced Logic:
-        // 1. qrUrl: Use Drive Thumbnail Link
-        // 2. backupUrl: Use API Generation
         let qrUrl = Config.CUSTOM_QR_IMAGE_URL;
         const backupUrl = Config.QR_CODE_API + encodeURIComponent(Config.SHARE_URL);
 
@@ -1078,8 +1163,6 @@ class UIManager {
             html: `
                 <div class="text-center p-3">
                     <p class="text-secondary mb-3">掃描此 QR Code 或點擊下方連結分享給道親</p>
-                    <!-- [v2.35 Fix] Use &quot; to escape quotes -->
-                    <!-- [v2.40 Fix] Add onerror fallback to auto-generate QR if Drive fails -->
                     <img src="${qrUrl}" alt="QR Code" style="width:200px; height:200px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;" 
                          referrerpolicy="no-referrer" 
                          onerror="this.onerror=null; this.src='${backupUrl}';">
@@ -1125,6 +1208,39 @@ class UIManager {
                 this.selectColor(defaultColor);
             }
         }
+    }
+
+    // [v2.42 New] Logic to update the timezone hint text
+    updateTimezoneHint() {
+        const isThai = document.getElementById('tzThai').checked;
+        const hintEl = document.getElementById('timezoneHint');
+        const displayEl = document.getElementById('convertedTimeDisplay');
+        const sDate = document.getElementById('startDate').value;
+        const sTime = document.getElementById('startTime').value;
+
+        if (!isThai || !sDate || !sTime) {
+            hintEl.style.display = 'none';
+            return;
+        }
+
+        // Calculate preview: Thai Input + 1 hour = Taiwan Display Time
+        const tempDate = new Date(`${sDate}T${sTime}`);
+        tempDate.setHours(tempDate.getHours() + 1);
+        
+        const h = tempDate.getHours().toString().padStart(2, '0');
+        const m = tempDate.getMinutes().toString().padStart(2, '0');
+        
+        // Check if date changed (e.g., 23:00 TH -> 00:00 TW next day)
+        const inputDateStr = sDate;
+        const calcDateStr = DateUtils.getLocalDateString(tempDate.toISOString());
+        
+        let text = `${h}:${m}`;
+        if (calcDateStr !== inputDateStr) {
+            text += ` (隔日)`;
+        }
+
+        displayEl.innerText = text;
+        hintEl.style.display = 'block';
     }
 
     selectColor(color) {
@@ -1215,8 +1331,34 @@ class UIManager {
         
         let startStr, endStr;
         if (type === 'activity') {
-            startStr = `${sDate}T${document.getElementById('startTime').value}`;
-            endStr = `${eDate}T${document.getElementById('endTime').value}`;
+            // [v2.42 Update] Timezone Calculation Logic
+            // 1. Create Date objects from raw input
+            let startObj = new Date(`${sDate}T${document.getElementById('startTime').value}`);
+            let endObj = new Date(`${eDate}T${document.getElementById('endTime').value}`);
+
+            // 2. Check Timezone Flag
+            const isThai = document.getElementById('tzThai').checked;
+            
+            // 3. Apply Offset if Thailand Time is selected (+1 Hour to convert to TW System Time)
+            if (isThai) {
+                startObj.setHours(startObj.getHours() + 1);
+                endObj.setHours(endObj.getHours() + 1);
+            }
+
+            // 4. Helper to format back to local ISO string (YYYY-MM-DDTHH:mm) for backend
+            const formatLocal = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const hh = String(date.getHours()).padStart(2, '0');
+                const mm = String(date.getMinutes()).padStart(2, '0');
+                // [v2.46 Update] Explicitly append +08:00 to lock Taiwan Time
+                return `${y}-${m}-${d}T${hh}:${mm}:00+08:00`;
+            };
+
+            startStr = formatLocal(startObj);
+            endStr = formatLocal(endObj);
+
         } else {
             startStr = sDate;
             endStr = DateUtils.addDaysToDateString(eDate, 1);
@@ -1533,6 +1675,7 @@ window.addLinkToLocal = () => app.ui.addLink();
 window.checkUrlSafety = (v) => app.ui.checkUrlSafety(v);
 window.toggleFormFields = () => app.ui.toggleFormFields();
 window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
+window.updateTimezoneHint = () => app.ui.updateTimezoneHint();
 
 
 // [v2.30 New] Global variable to store the original start date value for comparison
