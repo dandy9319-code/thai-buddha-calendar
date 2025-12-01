@@ -1,10 +1,10 @@
-<!-- v2.48 | Feature: Add 'Add to Google Calendar' Button in Modal | 2025-12-01 -->
+<!-- v2.51 | Fix: Auto-Swap Title/Type for misaligned columns | 2025-12-02 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.48)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.51)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -639,14 +639,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.48
+// 🏗️ 系統架構 (System Architecture) - v2.51
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.48 Update] Application Version
-    static get VERSION() { return 'v2.48'; } 
+    // [v2.51 Update] Application Version
+    static get VERSION() { return 'v2.51'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -698,7 +698,11 @@ class DateUtils {
     }
 
     static getTodayString() {
-        return this.getLocalDateString(new Date().toISOString());
+        // [v2.50 Fix] Use local timezone string to ensure today is correctly identified across timezones
+        const d = new Date();
+        const offset = d.getTimezoneOffset() * 60000;
+        const localDate = new Date(d.getTime() - offset);
+        return localDate.toISOString().split('T')[0];
     }
 
     // [v2.46 Update] Robust parser for Taiwan Time Strings with implicit or explicit timezone
@@ -711,14 +715,16 @@ class DateUtils {
         cleanStr = cleanStr.replace(/[\+\-]\d{2}:?\d{2}$/, ''); 
         
         // Match standard ISO format YYYY-MM-DDTHH:mm...
-        const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
+        // [v2.50 Fix] Regex extended to support date-only strings (without time)
+        const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
         if (!match) return null;
 
         const y = parseInt(match[1], 10);
         const m = parseInt(match[2], 10) - 1; // JS Month is 0-indexed
         const d = parseInt(match[3], 10);
-        const h = parseInt(match[4], 10);
-        const min = parseInt(match[5], 10);
+        // Default to 00:00 if time is missing
+        const h = match[4] ? parseInt(match[4], 10) : 0;
+        const min = match[5] ? parseInt(match[5], 10) : 0;
 
         // 1. Create UTC timestamp from digits (Treating digits as GMT+0)
         const utcMs = Date.UTC(y, m, d, h, min);
@@ -870,13 +876,28 @@ class EventManager {
         if (rawData.result && rawData.result.startsWith("Error")) return [];
         
         rawData.forEach(item => {
-            const type = item.type || (item.extendedProps && item.extendedProps.type) || 'person';
+            // [v2.49 New] Frontend Filter for Soft Delete (Ignore items marked isDeleted=true by backend)
+            if (item.isDeleted === true || item.isDeleted === "true") return;
+
+            // [v2.51 New] Smart Correction for Swapped Columns
+            // Heuristic: If 'title' looks like a type ('activity'/'person') AND 'type' looks like a title... SWAP THEM!
+            let correctedTitle = item.title;
+            let correctedType = item.type;
+            
+            if ((item.title === 'activity' || item.title === 'person') && 
+                (item.type !== 'activity' && item.type !== 'person')) {
+                // Detected swapped columns! Correcting...
+                correctedTitle = item.type;
+                correctedType = item.title;
+            }
+
+            const type = correctedType || (item.extendedProps && item.extendedProps.type) || 'person';
             const isActivity = (type === 'activity');
             const itemOrder = isActivity ? -1 : 10;
             
             this.allEvents.push({
                 id: item.id,
-                title: item.title,
+                title: correctedTitle || '(無名稱)', // [v2.50 Fix] Default title fallback
                 start: item.start,
                 end: item.end,
                 backgroundColor: item.backgroundColor,
@@ -945,7 +966,10 @@ class EventManager {
             const dateStr = DateUtils.getLocalDateString(e.start);
             const y = dateStr.substring(0, 4);
             const eType = e.type || 'person';
-            return y === year && (type === 'all' || eType === type) && (dateStr < todayStr);
+            // [v2.50 Fix] Change < to <= so today's passed events are included if needed, 
+            // though semantically History usually means strictly past. 
+            // Kept strict < for standard "Past", but ensure dateStr parsing is robust.
+            return y === year && (type === 'all' || eType === type) && (dateStr <= todayStr);
         }).sort((a, b) => new Date(a.start) - new Date(b.start));
     }
 
@@ -1492,7 +1516,15 @@ class UIManager {
 
     confirmDelete() {
         if (!this.mainCaptcha.validate()) { Swal.fire({icon:'error', title:'驗證碼錯誤'}); return; }
-        Swal.fire({title:'確定刪除？', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef9a9a', confirmButtonText:'刪除'})
+        // [v2.49 Update] Updated delete confirmation text for Soft Delete strategy
+        Swal.fire({
+            title: '確定刪除？', 
+            html: '<small class="text-muted">資料將移至回收區，系統會每日彙整通知管理員。</small>', 
+            icon: 'warning', 
+            showCancelButton: true, 
+            confirmButtonColor: '#ef9a9a', 
+            confirmButtonText: '移至回收區'
+        })
             .then(r => {
                 if(r.isConfirmed) this.app.deleteEvent(document.getElementById('eventId').value);
             });
