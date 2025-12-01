@@ -1,10 +1,10 @@
-<!-- v2.46 | Fix: Force TW Display in UTC Env & Explicit +08:00 Storage | 2025-12-01 -->
+<!-- v2.47 | UI: Add Timezone Auto-Switch Hint to Dashboard | 2025-12-01 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.46)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.47)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -631,14 +631,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.46
+// 🏗️ 系統架構 (System Architecture) - v2.47
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.46 Update] Application Version
-    static get VERSION() { return 'v2.46'; } 
+    // [v2.47 Update] Application Version
+    static get VERSION() { return 'v2.47'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -959,7 +959,13 @@ class UIManager {
             
             let html = '';
             if (activities.length > 0) {
-                html += `<div class="section-label">近期活動</div>`;
+                // [v2.47 Update] Add timezone hint text aligned to right
+                html += `<div class="section-label d-flex justify-content-between align-items-center">
+                            <span>近期活動</span>
+                            <span class="text-secondary fw-normal" style="font-size: 0.65rem; opacity: 0.8;">
+                                <i class="fa-solid fa-earth-asia me-1"></i>依照您的所在地自動切換當地時間
+                            </span>
+                         </div>`;
                 activities.forEach(e => {
                     // [v2.46 Fix] Robust Dashboard Timezone Display
                     let dStr = 'NAN', tStr = 'NAN';
