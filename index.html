@@ -1,10 +1,10 @@
-<!-- v2.47 | UI: Add Timezone Auto-Switch Hint to Dashboard | 2025-12-01 -->
+<!-- v2.48 | Feature: Add 'Add to Google Calendar' Button in Modal | 2025-12-01 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.47)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.48)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -545,6 +545,14 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
+                <!-- [v2.48 New] Add to Calendar Button Container (Hidden by default) -->
+                <div id="addToCalendarContainer" class="mb-3 text-center" style="display:none;">
+                    <a id="btnAddToGoogle" href="#" target="_blank" class="btn btn-outline-primary w-100">
+                        <i class="fa-brands fa-google me-2"></i>加入 Google 行事曆
+                    </a>
+                    <hr class="text-muted my-3">
+                </div>
+
                 <form id="eventForm">
                     <input type="hidden" id="eventId">
                     <input type="hidden" id="selectedColor">
@@ -631,14 +639,14 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.47
+// 🏗️ 系統架構 (System Architecture) - v2.48
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.47 Update] Application Version
-    static get VERSION() { return 'v2.47'; } 
+    // [v2.48 Update] Application Version
+    static get VERSION() { return 'v2.48'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -720,6 +728,36 @@ class DateUtils {
         const absoluteTimeMs = utcMs - taiwanOffsetMs;
 
         return new Date(absoluteTimeMs);
+    }
+}
+
+// [v2.48 New] CalendarUtils: Handle Calendar Logic
+class CalendarUtils {
+    static generateGoogleCalendarUrl(event) {
+        // 1. Parse stored time (Taiwan Time +08:00) to Date Object using DateUtils
+        const startDate = DateUtils.parseTaiwanDateTime(event.start);
+        let endDate = event.end ? DateUtils.parseTaiwanDateTime(event.end) : null;
+
+        if (!startDate) return '#';
+
+        if (!endDate) {
+            // If no end time, assume 1 hour duration
+             endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
+        }
+
+        // 2. Format to Google's UTC requirement: YYYYMMDDTHHMMSSZ
+        const formatUTC = (date) => {
+            return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        };
+
+        const startUTC = formatUTC(startDate);
+        const endUTC = formatUTC(endDate);
+
+        // 3. Construct URL
+        const title = encodeURIComponent(event.title || '無標題');
+        const details = encodeURIComponent('泰國天茂佛堂行事曆 - 來自共同行事曆的活動');
+        
+        return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startUTC}/${endUTC}&details=${details}`;
     }
 }
 
@@ -1047,6 +1085,9 @@ class UIManager {
         document.getElementById('modalTitle').innerText = '新增資料';
         document.getElementById('deleteBtn').style.display = 'none';
         
+        // [v2.48 New] Hide Add to Calendar button in Add Mode
+        document.getElementById('addToCalendarContainer').style.display = 'none';
+
         this.isEditingPastActivity = false;
         this.linkManager.setLinks([]);
         document.getElementById('completedSection').style.display = 'none';
@@ -1116,6 +1157,12 @@ class UIManager {
         document.getElementById('urlSafetyFeedback').innerHTML = '';
 
         this.toggleFormFields();    
+
+        // [v2.48 New] Generate and Show Google Calendar Button in Edit Mode
+        const googleUrl = CalendarUtils.generateGoogleCalendarUrl(e);
+        const btn = document.getElementById('btnAddToGoogle');
+        btn.href = googleUrl;
+        document.getElementById('addToCalendarContainer').style.display = 'block';
 
         // [v2.42] Edit Mode Default Timezone: Always start with System Time (Taiwan)
         document.getElementById('tzTaiwan').checked = true;
