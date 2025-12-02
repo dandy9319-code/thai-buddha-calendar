@@ -1,10 +1,10 @@
-<!-- v2.59 | Performance: LocalStorage Caching + Backend Slimming + Sync Timestamp | 2025-12-02 -->
+<!-- v2.61 | UI: Fix Mobile Button Consistency (Size & Layout) | 2025-12-02 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.59)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.61)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -331,14 +331,31 @@
             /* [v2.32 Update] Desktop/Global: Justify space-between for Left(Buttons) & Right(Version) */
             .report-bug-container {    
                 justify-content: space-between !important;    
-                padding-left: 20px;    
-                padding-bottom: 40px;    
+                padding-left: 10px !important; /* [v2.60 Opt] Reduce padding */
+                padding-right: 10px !important;    
+                padding-bottom: 80px !important; /* Ensure no overlap with Add button on mobile */
                 margin-top: 5px;    
                 display: flex; /* Ensure items are inline */
                 align-items: center;
-                gap: 10px; 
+                gap: 5px !important; /* [v2.60 Opt] Tighter gap */
             }
-            .btn-report-bug { background-color: #f0f0f0; color: #999; font-size: 0.75rem; padding: 4px 12px; box-shadow: none; border: 1px solid #ddd; }
+
+            /* [v2.61 Fix] Consistent sizing for bottom buttons on mobile */
+            .btn-report-bug, .btn-share {
+                font-size: 0.75rem !important;
+                padding: 5px 12px !important;
+                height: 30px !important;
+                display: flex !important;
+                align-items: center !important;
+                white-space: nowrap !important;
+            }
+            
+            .btn-report-bug { 
+                background-color: #f0f0f0; 
+                color: #999; 
+                border: 1px solid #ddd; 
+                box-shadow: none; 
+            }
         }
 
         /* --------------------------------------
@@ -669,7 +686,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.59
+// 🏗️ 系統架構 (System Architecture) - v2.61
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -679,8 +696,8 @@ class Config {
     // [v2.53] Moved API Secret here for easier configuration
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
-    // [v2.59 Update] Application Version
-    static get VERSION() { return 'v2.59'; } 
+    // [v2.61 Update] Application Version
+    static get VERSION() { return 'v2.61'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -1720,27 +1737,6 @@ class App {
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
         });
         this.calendar.render();
-        
-        // [v2.59 Opt] Load Cache Immediately
-        const cachedEvents = CacheManager.load();
-        if (cachedEvents) {
-            // If cache exists, load it first
-            console.log("Loading from cache...");
-            this.eventManager.setEvents(cachedEvents);
-            // Manually trigger calendar refetch since we populated eventManager directly
-            // Actually, the 'events' function wrapper handles the fetch.
-            // To show cache, we might need to provide it to calendar.
-            // A simpler way with FullCalendar:
-            // Let's just update UI components first. Calendar will fetch via wrapper.
-            this.ui.renderDashboard();
-            
-            // We can manually add events to calendar if we want instant display,
-            // but FullCalendar's 'events' function is async.
-            // We can let the wrapper handle the logic: if cache exists, return it immediately!
-        } else {
-            // No cache, show skeleton
-            // Skeleton is already in HTML by default
-        }
         
         // [v1.9] Initial adjustment
         this.adjustCalendarLayout();
