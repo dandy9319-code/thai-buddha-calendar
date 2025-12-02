@@ -1,10 +1,10 @@
-<!-- v2.51 | Fix: Auto-Swap Title/Type for misaligned columns | 2025-12-02 -->
+<!-- v2.54 | Fix: Resolve Link Data Mapping Issue (Deep Access) | 2025-12-02 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.51)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.54)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -639,14 +639,18 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.51
+// 🏗️ 系統架構 (System Architecture) - v2.54
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.51 Update] Application Version
-    static get VERSION() { return 'v2.51'; } 
+    // [v2.52] Add API Secret (Must match GAS)
+    // [v2.53] Moved API Secret here for easier configuration
+    static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
+
+    // [v2.54 Update] Application Version
+    static get VERSION() { return 'v2.54'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -780,29 +784,34 @@ class APIService {
     }
 
     static async saveEvent(data, action) {
+        // [v2.52] Attach App Secret
+        const payload = { action: action, appSecret: Config.API_SECRET, ...data };
+        
         return fetch(Config.API_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: action, ...data })
+            body: JSON.stringify(payload)
         });
     }
 
     static async deleteEvent(id) {
+        // [v2.52] Attach App Secret
         return fetch(Config.API_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'delete', id: id })
+            body: JSON.stringify({ action: 'delete', id: id, appSecret: Config.API_SECRET })
         });
     }
 
     static async sendReport(content) {
+        // [v2.52] Attach App Secret (Optional for report, but good practice)
         return fetch(Config.API_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({ action: 'send_report', content: content })
+            body: JSON.stringify({ action: 'send_report', content: content, appSecret: Config.API_SECRET })
         });
     }
 }
@@ -880,13 +889,11 @@ class EventManager {
             if (item.isDeleted === true || item.isDeleted === "true") return;
 
             // [v2.51 New] Smart Correction for Swapped Columns
-            // Heuristic: If 'title' looks like a type ('activity'/'person') AND 'type' looks like a title... SWAP THEM!
             let correctedTitle = item.title;
             let correctedType = item.type;
             
             if ((item.title === 'activity' || item.title === 'person') && 
                 (item.type !== 'activity' && item.type !== 'person')) {
-                // Detected swapped columns! Correcting...
                 correctedTitle = item.type;
                 correctedType = item.title;
             }
@@ -905,8 +912,9 @@ class EventManager {
                 extendedProps: {
                     type: type,
                     order: itemOrder,
-                    linkName: item.linkName || '',
-                    linkUrl: item.linkUrl || ''
+                    // [v2.54 Fix] Deep Access for Link Data (GAS return structure is nested)
+                    linkName: item.linkName || (item.extendedProps && item.extendedProps.linkName) || '',
+                    linkUrl: item.linkUrl || (item.extendedProps && item.extendedProps.linkUrl) || ''
                 },
                 order: itemOrder,
                     type: type
@@ -966,9 +974,7 @@ class EventManager {
             const dateStr = DateUtils.getLocalDateString(e.start);
             const y = dateStr.substring(0, 4);
             const eType = e.type || 'person';
-            // [v2.50 Fix] Change < to <= so today's passed events are included if needed, 
-            // though semantically History usually means strictly past. 
-            // Kept strict < for standard "Past", but ensure dateStr parsing is robust.
+            // [v2.50 Fix] Change < to <= so today's passed events are included if needed
             return y === year && (type === 'all' || eType === type) && (dateStr <= todayStr);
         }).sort((a, b) => new Date(a.start) - new Date(b.start));
     }
@@ -1039,7 +1045,6 @@ class UIManager {
                         
                         if (isUTCSystem) {
                             // FORCE Display as Taiwan Time (+8) if system is UTC
-                            // This prevents "3 AM" display in preview windows
                             const twTime = new Date(eventTime.getTime() + (8 * 60 * 60 * 1000));
                             dStr = twTime.toISOString().substring(0, 10);
                             tStr = twTime.toISOString().substring(11, 16);
@@ -1269,7 +1274,11 @@ class UIManager {
             colorSection.style.display = 'none';
             document.getElementById('selectedColor').value = Config.COLOR_ACTIVITY;
             
-            if (this.isEditingPastActivity) {
+            // [v2.53 Fix] Always show Completed Section if Links Exist OR it's a past activity
+            // This logic is more robust than date-only checking
+            const hasLinks = this.linkManager.getLinks().length > 0;
+            
+            if (this.isEditingPastActivity || hasLinks) {
                 completedSection.style.display = 'block';
                 this.renderLinkList();
             } else {
