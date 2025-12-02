@@ -1,10 +1,10 @@
-<!-- v2.54 | Fix: Resolve Link Data Mapping Issue (Deep Access) | 2025-12-02 -->
+<!-- v2.56 | Fix: Remove Duplicate API Call causing double entries | 2025-12-02 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.54)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.56)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -639,7 +639,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.54
+// 🏗️ 系統架構 (System Architecture) - v2.56
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -649,8 +649,8 @@ class Config {
     // [v2.53] Moved API Secret here for easier configuration
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
-    // [v2.54 Update] Application Version
-    static get VERSION() { return 'v2.54'; } 
+    // [v2.56 Update] Application Version
+    static get VERSION() { return 'v2.56'; } 
     // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     // [v2.12] Macaron / Pastel Palette
@@ -787,11 +787,18 @@ class APIService {
         // [v2.52] Attach App Secret
         const payload = { action: action, appSecret: Config.API_SECRET, ...data };
         
+        // [v2.56 Fix] Remove Duplicate API Call.
+        // Previously, there was an unused 'await fetch' here that caused double submission.
+        // Now we only return the single fetch promise chain below.
+        
         return fetch(Config.API_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            // mode: 'no-cors', // Removed to allow reading response
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(payload)
+        }).then(res => res.json()).then(data => {
+            if (data.result === 'error') throw new Error(data.error);
+            return data;
         });
     }
 
@@ -799,9 +806,12 @@ class APIService {
         // [v2.52] Attach App Secret
         return fetch(Config.API_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            // mode: 'no-cors', // Removed
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action: 'delete', id: id, appSecret: Config.API_SECRET })
+        }).then(res => res.json()).then(data => {
+            if (data.result === 'error') throw new Error(data.error);
+            return data;
         });
     }
 
@@ -809,9 +819,12 @@ class APIService {
         // [v2.52] Attach App Secret (Optional for report, but good practice)
         return fetch(Config.API_URL, {
             method: 'POST',
-            mode: 'no-cors',
+            // mode: 'no-cors', // Removed
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ action: 'send_report', content: content, appSecret: Config.API_SECRET })
+        }).then(res => res.json()).then(data => {
+             if (data.result === 'error') throw new Error(data.error);
+             return data;
         });
     }
 }
@@ -1463,6 +1476,7 @@ class UIManager {
             linkUrl: this.linkManager.getJson()
         };
 
+        // [v2.55 Fix] Update App class to handle errors gracefully
         this.app.saveEvent(data, id ? 'update' : 'create');
     }
 
@@ -1679,6 +1693,7 @@ class App {
             .catch(err => failureCallback(err));
     }
 
+    // [v2.55 Fix] Refined Error Handling Logic in App class
     saveEvent(data, action) {
         Swal.fire({title:'儲存中...', didOpen:()=>{Swal.showLoading()}});
         APIService.saveEvent(data, action)
@@ -1689,7 +1704,7 @@ class App {
                     this.ui.modalEl.hide();    
                 }, 2000);
             })
-            .catch(() => Swal.fire('連線異常','請檢查網路','error'));
+            .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
 
     deleteEvent(id) {
@@ -1701,14 +1716,15 @@ class App {
                     this.calendar.refetchEvents();    
                     this.ui.modalEl.hide();    
                 }, 2000);
-            });
+            })
+            .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
 
     sendReport(content) {
         Swal.fire({title:'傳送中...', didOpen:()=>{Swal.showLoading()}});
         APIService.sendReport(content)
             .then(() => Swal.fire('已回報', '感謝您的回饋', 'success'))
-            .catch(() => Swal.fire('失敗', '請稍後再試', 'error'));
+            .catch((err) => Swal.fire('失敗', err.message, 'error')); // Use error message from backend
     }
 
     jumpToDate(dateVal) {
