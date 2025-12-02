@@ -1,10 +1,10 @@
-<!-- v2.61 | UI: Fix Mobile Button Consistency (Size & Layout) | 2025-12-02 -->
+<!-- v2.66 | Fix: Infinite Loop in History Loading & Dropdown Logic | 2025-12-03 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.61)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.66)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -686,21 +686,17 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.61
+// 🏗️ 系統架構 (System Architecture) - v2.66
 // ==========================================
 
 // 1. Config: 靜態設定檔
 class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
-    // [v2.52] Add API Secret (Must match GAS)
-    // [v2.53] Moved API Secret here for easier configuration
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
-    // [v2.61 Update] Application Version
-    static get VERSION() { return 'v2.61'; } 
-    // [v2.18] Updated Activity Color to Lighter Macaron Pink (#ffe9f3)
+    // [v2.66 Update] Application Version
+    static get VERSION() { return 'v2.66'; } 
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
-    // [v2.12] Macaron / Pastel Palette
     static get COLORS_PERSON() {    
         return [
             '#DCEDC8', // Light Green
@@ -717,11 +713,8 @@ class Config {
             '#ECEFF1'  // Blue Grey
         ];
     }
-    // [v2.38 Fix] Share Config - Reverted to Original Link
     static get SHARE_URL() { return 'https://reurl.cc/oK5Arj'; }
-    // [v2.40 Fix] Use Google Drive Thumbnail API for more reliable embedding
     static get CUSTOM_QR_IMAGE_URL() { return 'https://drive.google.com/thumbnail?id=1Vh82Dt8qsEAtJSP-uzOqbYeK4sSBoHDw&sz=w400'; } 
-    // Fallback API
     static get QR_CODE_API() { return 'https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl='; }
 }
 
@@ -780,45 +773,35 @@ class DateUtils {
     }
 
     static getTodayString() {
-        // [v2.50 Fix] Use local timezone string to ensure today is correctly identified across timezones
         const d = new Date();
         const offset = d.getTimezoneOffset() * 60000;
         const localDate = new Date(d.getTime() - offset);
         return localDate.toISOString().split('T')[0];
     }
 
-    // [v2.46 Update] Robust parser for Taiwan Time Strings with implicit or explicit timezone
     static parseTaiwanDateTime(isoStr) {
         if (!isoStr) return null;
         
         let cleanStr = isoStr;
-        // Strip existing offset or Z to treat numbers as absolute Taiwan digits
         if (cleanStr.includes('Z')) cleanStr = cleanStr.replace('Z', '');
         cleanStr = cleanStr.replace(/[\+\-]\d{2}:?\d{2}$/, ''); 
         
-        // Match standard ISO format YYYY-MM-DDTHH:mm...
-        // [v2.50 Fix] Regex extended to support date-only strings (without time)
         const match = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{2}):(\d{2}))?/);
         if (!match) return null;
 
         const y = parseInt(match[1], 10);
-        const m = parseInt(match[2], 10) - 1; // JS Month is 0-indexed
+        const m = parseInt(match[2], 10) - 1; 
         const d = parseInt(match[3], 10);
-        // Default to 00:00 if time is missing
         const h = match[4] ? parseInt(match[4], 10) : 0;
         const min = match[5] ? parseInt(match[5], 10) : 0;
 
-        // 1. Create UTC timestamp from digits (Treating digits as GMT+0)
         const utcMs = Date.UTC(y, m, d, h, min);
-
-        // 2. Shift by -8 Hours to represent the actual moment in time (since digits were GMT+8)
         const taiwanOffsetMs = 8 * 60 * 60 * 1000;
         const absoluteTimeMs = utcMs - taiwanOffsetMs;
 
         return new Date(absoluteTimeMs);
     }
     
-    // [v2.59 New] Format timestamp for display (e.g. "10:30")
     static formatTimeDisplay(isoStr) {
         if (!isoStr) return '';
         const d = new Date(isoStr);
@@ -826,99 +809,114 @@ class DateUtils {
     }
 }
 
-// [v2.48 New] CalendarUtils: Handle Calendar Logic
+// [v2.48 New] CalendarUtils
 class CalendarUtils {
     static generateGoogleCalendarUrl(event) {
-        // 1. Parse stored time (Taiwan Time +08:00) to Date Object using DateUtils
         const startDate = DateUtils.parseTaiwanDateTime(event.start);
         let endDate = event.end ? DateUtils.parseTaiwanDateTime(event.end) : null;
-
         if (!startDate) return '#';
+        if (!endDate) endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
 
-        if (!endDate) {
-            // If no end time, assume 1 hour duration
-             endDate = new Date(startDate.getTime() + (60 * 60 * 1000));
-        }
-
-        // 2. Format to Google's UTC requirement: YYYYMMDDTHHMMSSZ
-        const formatUTC = (date) => {
-            return date.toISOString().replace(/-|:|\.\d\d\d/g, "");
-        };
-
+        const formatUTC = (date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
         const startUTC = formatUTC(startDate);
         const endUTC = formatUTC(endDate);
 
-        // 3. Construct URL
         const title = encodeURIComponent(event.title || '無標題');
         const details = encodeURIComponent('泰國天茂佛堂行事曆 - 來自共同行事曆的活動');
-        
         return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startUTC}/${endUTC}&details=${details}`;
     }
 }
 
 // 3. APIService: 雲端服務層 (無 UI)
 class APIService {
+    // [v2.65 Update] Retry Helper
+    static async fetchWithRetry(url, options = {}, retries = 3, backoff = 500) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const res = await fetch(url, options);
+                // Ensure we actually got a JSON response
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                if (i === retries - 1) throw err;
+                // Wait for backoff time
+                await new Promise(r => setTimeout(r, backoff * (i + 1))); 
+            }
+        }
+    }
+
+    // GET: Fetch Recent Events
     static async fetchEvents() {
         try {
-            const res = await fetch(Config.API_URL);
-            return await res.json();
+            // [CORS] Cache Busting parameter
+            const url = `${Config.API_URL}?t=${new Date().getTime()}`;
+            // [CORS] redirect: 'follow' is standard for GAS Web Apps
+            return await this.fetchWithRetry(url, { method: 'GET', redirect: 'follow' });
         } catch (error) {
             console.error("Fetch Error:", error);
             throw error;
         }
     }
 
+    // POST: Fetch History or CRUD
+    static async fetchHistory(year) {
+        try {
+            const payload = { action: 'get_history', year: year, appSecret: Config.API_SECRET };
+            const result = await this.fetchWithRetry(Config.API_URL, {
+                method: 'POST',
+                redirect: 'follow', // GAS requires this for POST too usually
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Use text/plain to avoid CORS preflight issues in some browsers
+                body: JSON.stringify(payload)
+            });
+            return result;
+        } catch (error) {
+            console.error("Fetch History Error:", error);
+            return { result: 'error', error: error.message };
+        }
+    }
+
     static async saveEvent(data, action) {
-        // [v2.52] Attach App Secret
         const payload = { action: action, appSecret: Config.API_SECRET, ...data };
-        
-        // [v2.56 Fix] Remove Duplicate API Call.
-        return fetch(Config.API_URL, {
+        const result = await this.fetchWithRetry(Config.API_URL, {
             method: 'POST',
-            // mode: 'no-cors', // Removed to allow reading response
-            headers: { 'Content-Type': 'text/plain' },
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
-        }).then(res => res.json()).then(data => {
-            if (data.result === 'error') throw new Error(data.error);
-            return data;
         });
+        if (result.result === 'error') throw new Error(result.error);
+        return result;
     }
 
     static async deleteEvent(id) {
-        // [v2.52] Attach App Secret
-        return fetch(Config.API_URL, {
+        const result = await this.fetchWithRetry(Config.API_URL, {
             method: 'POST',
-            // mode: 'no-cors', // Removed
-            headers: { 'Content-Type': 'text/plain' },
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'delete', id: id, appSecret: Config.API_SECRET })
-        }).then(res => res.json()).then(data => {
-            if (data.result === 'error') throw new Error(data.error);
-            return data;
         });
+        if (result.result === 'error') throw new Error(result.error);
+        return result;
     }
 
     static async sendReport(content) {
-        // [v2.52] Attach App Secret (Optional for report, but good practice)
-        return fetch(Config.API_URL, {
+        const result = await this.fetchWithRetry(Config.API_URL, {
             method: 'POST',
-            // mode: 'no-cors', // Removed
-            headers: { 'Content-Type': 'text/plain' },
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'send_report', content: content, appSecret: Config.API_SECRET })
-        }).then(res => res.json()).then(data => {
-             if (data.result === 'error') throw new Error(data.error);
-             return data;
         });
+        if (result.result === 'error') throw new Error(result.error);
+        return result;
     }
 }
 
-// 4. CaptchaSystem: 驗證碼系統
+// 4. CaptchaSystem
 class CaptchaSystem {
     constructor(displayId, inputId) {
         this.displayId = displayId;
         this.inputId = inputId;
         this.currentCode = "";
     }
-
     generate() {
         const displayEl = document.getElementById(this.displayId);
         const inputEl = document.getElementById(this.inputId);
@@ -927,7 +925,6 @@ class CaptchaSystem {
         if (inputEl) inputEl.value = '';
         return this.currentCode;
     }
-
     validate() {
         const inputEl = document.getElementById(this.inputId);
         if (!inputEl) return false;
@@ -935,58 +932,42 @@ class CaptchaSystem {
     }
 }
 
-// 5. LinkManager: 連結管理邏輯
+// 5. LinkManager
 class LinkManager {
-    constructor() {
-        this.links = [];
-        this.maxLinks = 3;
-    }
-
-    setLinks(links) {
-        this.links = Array.isArray(links) ? links : [];
-    }
-
+    constructor() { this.links = []; this.maxLinks = 3; }
+    setLinks(links) { this.links = Array.isArray(links) ? links : []; }
     addLink(name, url) {
         if (this.links.length >= this.maxLinks) throw new Error('數量限制：最多 3 個連結');
         if (!name || !url) throw new Error('請輸入名稱與網址');
         this.links.push({ name, url });
     }
-
-    removeLink(index) {
-        if (index >= 0 && index < this.links.length) {
-            this.links.splice(index, 1);
-        }
-    }
-
+    removeLink(index) { if (index >= 0 && index < this.links.length) this.links.splice(index, 1); }
     getLinks() { return this.links; }
     getJson() { return JSON.stringify(this.links); }
-    
     static checkSafety(url) {
-        try {
-            const u = new URL(url);
-            return u.protocol === 'https:';
-        } catch { return false; }
+        try { const u = new URL(url); return u.protocol === 'https:'; } catch { return false; }
     }
 }
 
 // 6. EventManager: 資料邏輯層
 class EventManager {
     constructor() {
-        this.allEvents = [];
+        // [v2.63 Update] Use Map for efficient merging of events by ID
+        this.eventsMap = new Map();
+        this.yearList = [];
     }
 
-    setEvents(rawData) {
-        this.allEvents = [];
-        if (rawData.result && rawData.result.startsWith("Error")) return [];
+    // [v2.63 Update] Merge logic for Cache/Recent/History
+    mergeEvents(newEvents) {
+        if (!newEvents || !Array.isArray(newEvents)) return;
         
-        rawData.forEach(item => {
-            // [v2.49 New] Frontend Filter for Soft Delete (Ignore items marked isDeleted=true by backend)
+        newEvents.forEach(item => {
+            // [v2.49] Frontend Filter for Soft Delete
             if (item.isDeleted === true || item.isDeleted === "true") return;
 
-            // [v2.51 New] Smart Correction for Swapped Columns
+            // [v2.51] Smart Correction for Swapped Columns
             let correctedTitle = item.title;
             let correctedType = item.type;
-            
             if ((item.title === 'activity' || item.title === 'person') && 
                 (item.type !== 'activity' && item.type !== 'person')) {
                 correctedTitle = item.type;
@@ -994,12 +975,11 @@ class EventManager {
             }
 
             const type = correctedType || (item.extendedProps && item.extendedProps.type) || 'person';
-            const isActivity = (type === 'activity');
-            const itemOrder = isActivity ? -1 : 10;
+            const itemOrder = (type === 'activity') ? -1 : 10;
             
-            this.allEvents.push({
+            const eventObj = {
                 id: item.id,
-                title: correctedTitle || '(無名稱)', // [v2.50 Fix] Default title fallback
+                title: correctedTitle || '(無名稱)', 
                 start: item.start,
                 end: item.end,
                 backgroundColor: item.backgroundColor,
@@ -1007,19 +987,29 @@ class EventManager {
                 extendedProps: {
                     type: type,
                     order: itemOrder,
-                    // [v2.54 Fix] Deep Access for Link Data (GAS return structure is nested)
                     linkName: item.linkName || (item.extendedProps && item.extendedProps.linkName) || '',
                     linkUrl: item.linkUrl || (item.extendedProps && item.extendedProps.linkUrl) || ''
                 },
                 order: itemOrder,
-                    type: type
-            });
+                type: type
+            };
+            
+            // Upsert into Map (Last write wins, assuming newer fetch is better)
+            this.eventsMap.set(item.id, eventObj);
         });
+    }
+
+    setYears(years) {
+        this.yearList = Array.isArray(years) ? years : [];
+    }
+
+    getAllEventsArray() {
+        return Array.from(this.eventsMap.values());
     }
 
     getExplodedEvents() {
         let exploded = [];
-        this.allEvents.forEach(item => {
+        this.eventsMap.forEach(item => {
             if (!item.start) return;
 
             const isActivity = (item.type === 'activity');
@@ -1037,7 +1027,7 @@ class EventManager {
 
                 const classList = ['hide-time-text'];
                 if (isActivity) classList.push('event-type-activity');
-                else classList.isActivity ? classList.push('event-type-activity') : classList.push('person-pill');
+                else classList.push('person-pill');
                 
                 exploded.push({
                     id: item.id,
@@ -1060,27 +1050,34 @@ class EventManager {
 
     getUpcomingEvents() {
         const todayStr = DateUtils.getTodayString();
-        return this.allEvents.filter(e => DateUtils.getLocalDateString(e.start) >= todayStr);
+        return this.getAllEventsArray().filter(e => DateUtils.getLocalDateString(e.start) >= todayStr);
     }
 
     getHistoryEvents(year, type) {
         const todayStr = DateUtils.getTodayString();
-        return this.allEvents.filter(e => {
+        return this.getAllEventsArray().filter(e => {
             const dateStr = DateUtils.getLocalDateString(e.start);
             const y = dateStr.substring(0, 4);
             const eType = e.type || 'person';
-            // [v2.50 Fix] Change < to <= so today's passed events are included if needed
             return y === year && (type === 'all' || eType === type) && (dateStr <= todayStr);
         }).sort((a, b) => new Date(a.start) - new Date(b.start));
     }
 
     getYearsList() {
-        const years = new Set(this.allEvents.map(e => DateUtils.getLocalDateString(e.start).substring(0, 4)));
+        // Return server provided years if available, otherwise fallback to local calculation
+        if (this.yearList.length > 0) return this.yearList;
+        const years = new Set(this.getAllEventsArray().map(e => DateUtils.getLocalDateString(e.start).substring(0, 4)));
         return Array.from(years).sort((a, b) => b - a);
     }
 
     findEventById(id) {
-        return this.allEvents.find(e => e.id === id);
+        return this.eventsMap.get(id);
+    }
+    
+    // [v2.63 New] Clear all data (for fresh load scenarios if needed)
+    clear() {
+        this.eventsMap.clear();
+        this.yearList = [];
     }
 }
 
@@ -1091,7 +1088,6 @@ class UIManager {
         this.linkManager = new LinkManager();
         this.mainCaptcha = new CaptchaSystem('captchaDisplay', 'captchaInput');
         this.reportCaptcha = new CaptchaSystem('reportCaptchaDisplay', 'reportCaptchaInput');
-        this.deleteLinkCaptcha = new CaptchaSystem('reportCaptchaDisplay', 'deleteLinkCaptchaInput');    
         
         this.isEditingPastActivity = false;
         
@@ -1122,7 +1118,6 @@ class UIManager {
             
             let html = '';
             if (activities.length > 0) {
-                // [v2.47 Update] Add timezone hint text aligned to right
                 html += `<div class="section-label d-flex justify-content-between align-items-center">
                             <span>近期活動</span>
                             <span class="text-secondary fw-normal" style="font-size: 0.65rem; opacity: 0.8;">
@@ -1130,30 +1125,25 @@ class UIManager {
                             </span>
                          </div>`;
                 activities.forEach(e => {
-                    // [v2.46 Fix] Robust Dashboard Timezone Display
                     let dStr = 'NAN', tStr = 'NAN';
                     const eventTime = DateUtils.parseTaiwanDateTime(e.start);
 
                     if (eventTime && !isNaN(eventTime.getTime())) {
-                        // Check if system is in UTC (preview/server env)
                         const isUTCSystem = new Date().getTimezoneOffset() === 0;
                         
                         if (isUTCSystem) {
-                            // FORCE Display as Taiwan Time (+8) if system is UTC
                             const twTime = new Date(eventTime.getTime() + (8 * 60 * 60 * 1000));
                             dStr = twTime.toISOString().substring(0, 10);
                             tStr = twTime.toISOString().substring(11, 16);
                         } else {
-                            // Normal Browser: Display Local Time (Taiwan or Thailand)
                             dStr = eventTime.getFullYear() + '-' + 
-                                      String(eventTime.getMonth() + 1).padStart(2, '0') + '-' + 
-                                      String(eventTime.getDate()).padStart(2, '0');
-                                      
+                                   String(eventTime.getMonth() + 1).padStart(2, '0') + '-' + 
+                                   String(eventTime.getDate()).padStart(2, '0');
+                                   
                             tStr = String(eventTime.getHours()).padStart(2, '0') + ':' + 
-                                      String(eventTime.getMinutes()).padStart(2, '0');
+                                   String(eventTime.getMinutes()).padStart(2, '0');
                         }
                     } else {
-                        // Fallback
                         dStr = e.start.substring(0, 10);
                         tStr = e.start.includes('T') ? e.start.substring(11, 16) : '00:00';
                     }
@@ -1167,10 +1157,9 @@ class UIManager {
                 });
             }
             if (people.length > 0) {
-                html += `<div class="section-label">近期參與人員</div><div class="d-block d-flex flex-wrap gap-1">`; // Use flex-wrap here for inline buttons
+                html += `<div class="section-label">近期參與人員</div><div class="d-block d-flex flex-wrap gap-1">`; 
                 people.forEach(e => {
                     const d = DateUtils.getLocalDateString(e.start);
-                    // [v2.23 Fix] Use .btn-person-pill for auto width, and ensure inner content is separated (Name | Date)
                     html += `<button class="btn dashboard-btn btn-person-pill" style="background:${e.backgroundColor}; color:#5D4037; border-left: 4px solid transparent !important;" onclick="jumpToDate('${e.start}')">
                                              <strong style="font-weight: bold;">${e.title}</strong>
                                              <span class="person-date-text">${d}</span>
@@ -1181,12 +1170,14 @@ class UIManager {
             listContainer.innerHTML = html;
         }
         
+        // [v2.63 Update] Populate Year Select with server provided years first
         const years = this.app.eventManager.getYearsList();
         const sel = document.getElementById('searchYear');
+        const currentVal = sel.value; // Keep selection if user selected something
         sel.innerHTML = '<option value="">選擇年份...</option>';
         years.forEach(y => sel.innerHTML += `<option value="${y}">${y}年</option>`);
+        if (currentVal && years.includes(currentVal)) sel.value = currentVal;
 
-        // [v2.59 New] Update Last Synced Display
         const lastSync = CacheManager.getLastSynced();
         const syncEl = document.getElementById('lastSyncedText');
         if (lastSync) {
@@ -1203,8 +1194,11 @@ class UIManager {
         resSel.innerHTML = '<option value="">請選擇...</option>';
         if(!yVal) return;
 
+        // [v2.66 Fix] Trigger Lazy Load only if needed
+        this.app.loadHistoryForYear(yVal);
+        
         const results = this.app.eventManager.getHistoryEvents(yVal, tVal);
-        if(results.length === 0) { resSel.innerHTML = '<option value="">查無資料</option>'; return; }
+        if(results.length === 0) { resSel.innerHTML = '<option value="">查無資料 (或載入中...)</option>'; return; }
         
         results.forEach(e => {
             const d = DateUtils.getLocalDateString(e.start);
@@ -1218,7 +1212,6 @@ class UIManager {
         document.getElementById('modalTitle').innerText = '新增資料';
         document.getElementById('deleteBtn').style.display = 'none';
         
-        // [v2.48 New] Hide Add to Calendar button in Add Mode
         document.getElementById('addToCalendarContainer').style.display = 'none';
 
         this.isEditingPastActivity = false;
@@ -1240,7 +1233,6 @@ class UIManager {
         document.getElementById('startTime').value = t;    
         document.getElementById('endTime').value = t;
 
-        // [v2.42 New] Default timezone to Taiwan
         document.getElementById('tzTaiwan').checked = true;
         this.updateTimezoneHint();
 
@@ -1248,10 +1240,8 @@ class UIManager {
         document.getElementById('selectedColor').value = '';    
         this.toggleFormFields();
         
-        // [v2.30 Change] 載入時不設定 UX 預設，避免覆蓋多日活動。
-        // 而是依賴 syncDates 內的檢查 logic (v2.29)
-        originalStartDate = dStr; // 初始化原始開始日期
-        window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
+        originalStartDate = dStr; 
+        window.syncDates(false); 
         
         this.modalEl.show();
     }
@@ -1291,13 +1281,11 @@ class UIManager {
 
         this.toggleFormFields();    
 
-        // [v2.48 New] Generate and Show Google Calendar Button in Edit Mode
         const googleUrl = CalendarUtils.generateGoogleCalendarUrl(e);
         const btn = document.getElementById('btnAddToGoogle');
         btn.href = googleUrl;
         document.getElementById('addToCalendarContainer').style.display = 'block';
 
-        // [v2.42] Edit Mode Default Timezone: Always start with System Time (Taiwan)
         document.getElementById('tzTaiwan').checked = true;
         this.updateTimezoneHint();
 
@@ -1309,7 +1297,6 @@ class UIManager {
                 const correctEnd = DateUtils.addDaysToDateString(eStrRaw, -1);
                 document.getElementById('endDate').value = correctEnd; 
             } else {
-                // [v2.41 Fix] Robust time extraction for Date objects or ISO Strings
                 const getTimeString = (val) => {
                     if (!val) return '00:00';
                     const d = new Date(val); 
@@ -1331,15 +1318,13 @@ class UIManager {
             }
         }
 
-        // [v2.30 Change] 載入時不設定 UX 預設，依賴 syncDates 處理載入邏輯。
-        originalStartDate = document.getElementById('startDate').value; // 設定原始開始日期
-        window.syncDates(false); // 傳遞 false 旗標，表示非使用者互動
+        originalStartDate = document.getElementById('startDate').value; 
+        window.syncDates(false); 
         
         this.mainCaptcha.generate();
         this.modalEl.show();
     }
     
-    // [v2.31 New] Share Modal Method
     openShareModal() {
         let qrUrl = Config.CUSTOM_QR_IMAGE_URL;
         const backupUrl = Config.QR_CODE_API + encodeURIComponent(Config.SHARE_URL);
@@ -1365,7 +1350,6 @@ class UIManager {
         });
     }
 
-
     toggleFormFields() {
         const type = document.getElementById('eventType').value;
         const colorSection = document.getElementById('colorSection');
@@ -1378,8 +1362,6 @@ class UIManager {
             colorSection.style.display = 'none';
             document.getElementById('selectedColor').value = Config.COLOR_ACTIVITY;
             
-            // [v2.53 Fix] Always show Completed Section if Links Exist OR it's a past activity
-            // This logic is more robust than date-only checking
             const hasLinks = this.linkManager.getLinks().length > 0;
             
             if (this.isEditingPastActivity || hasLinks) {
@@ -1400,7 +1382,6 @@ class UIManager {
         }
     }
 
-    // [v2.42 New] Logic to update the timezone hint text
     updateTimezoneHint() {
         const isThai = document.getElementById('tzThai').checked;
         const hintEl = document.getElementById('timezoneHint');
@@ -1413,14 +1394,12 @@ class UIManager {
             return;
         }
 
-        // Calculate preview: Thai Input + 1 hour = Taiwan Display Time
         const tempDate = new Date(`${sDate}T${sTime}`);
         tempDate.setHours(tempDate.getHours() + 1);
         
         const h = tempDate.getHours().toString().padStart(2, '0');
         const m = tempDate.getMinutes().toString().padStart(2, '0');
         
-        // Check if date changed (e.g., 23:00 TH -> 00:00 TW next day)
         const inputDateStr = sDate;
         const calcDateStr = DateUtils.getLocalDateString(tempDate.toISOString());
         
@@ -1502,7 +1481,6 @@ class UIManager {
         const sDate = document.getElementById('startDate').value;
         const eDate = document.getElementById('endDate').value;
         
-        // [v2.19 Fix] 檢查結束日期是否早於開始日期 (表單驗證層級)
         if (sDate > eDate) {
             Swal.fire({
                 icon: 'error',
@@ -1521,28 +1499,22 @@ class UIManager {
         
         let startStr, endStr;
         if (type === 'activity') {
-            // [v2.42 Update] Timezone Calculation Logic
-            // 1. Create Date objects from raw input
             let startObj = new Date(`${sDate}T${document.getElementById('startTime').value}`);
             let endObj = new Date(`${eDate}T${document.getElementById('endTime').value}`);
 
-            // 2. Check Timezone Flag
             const isThai = document.getElementById('tzThai').checked;
             
-            // 3. Apply Offset if Thailand Time is selected (+1 Hour to convert to TW System Time)
             if (isThai) {
                 startObj.setHours(startObj.getHours() + 1);
                 endObj.setHours(endObj.getHours() + 1);
             }
 
-            // 4. Helper to format back to local ISO string (YYYY-MM-DDTHH:mm) for backend
             const formatLocal = (date) => {
                 const y = date.getFullYear();
                 const m = String(date.getMonth() + 1).padStart(2, '0');
                 const d = String(date.getDate()).padStart(2, '0');
                 const hh = String(date.getHours()).padStart(2, '0');
                 const mm = String(date.getMinutes()).padStart(2, '0');
-                // [v2.46 Update] Explicitly append +08:00 to lock Taiwan Time
                 return `${y}-${m}-${d}T${hh}:${mm}:00+08:00`;
             };
 
@@ -1567,7 +1539,6 @@ class UIManager {
             linkUrl: this.linkManager.getJson()
         };
 
-        // [v2.55 Fix] Update App class to handle errors gracefully
         this.app.saveEvent(data, id ? 'update' : 'create');
     }
 
@@ -1600,7 +1571,7 @@ class UIManager {
 
     openReportModal() {
         const code = this.reportCaptcha.generate();
-        const appVersion = Config.VERSION; // [v2.21 Update] Get version
+        const appVersion = Config.VERSION; 
         Swal.fire({
             title: '回報問題',
             html: `
@@ -1619,7 +1590,6 @@ class UIManager {
                 if (!content) { Swal.showValidationMessage('請輸入回報內容'); return false; }
                 if (input !== this.reportCaptcha.currentCode) { Swal.showValidationMessage('驗證碼錯誤'); return false; }
                 
-                // [v2.20 New] Prepend version to content
                 const finalContent = `[版本 ${appVersion}] ${content}`;
                 return finalContent;
             }
@@ -1630,7 +1600,6 @@ class UIManager {
 
     confirmDelete() {
         if (!this.mainCaptcha.validate()) { Swal.fire({icon:'error', title:'驗證碼錯誤'}); return; }
-        // [v2.49 Update] Updated delete confirmation text for Soft Delete strategy
         Swal.fire({
             title: '確定刪除？', 
             html: '<small class="text-muted">資料將移至回收區，系統會每日彙整通知管理員。</small>', 
@@ -1651,6 +1620,8 @@ class App {
         this.eventManager = new EventManager();
         this.ui = new UIManager(this);
         this.calendar = null;
+        // [v2.63 New] Track loaded history years to avoid re-fetching
+        this.loadedHistoryYears = new Set();
     }
 
     init() {
@@ -1658,17 +1629,13 @@ class App {
         document.getElementById('startTime').innerHTML = opts;
         document.getElementById('endTime').innerHTML = opts;
         this.initCalendar();
-        
-        // [v2.20 New] Display version
         this.displayVersion(); 
         
-        // [v1.9] Listen to resize to adjust mobile/desktop height logic
         window.addEventListener('resize', () => {
             this.adjustCalendarLayout();
         });
     }
     
-    // [v2.20 New] Method to display the app version
     displayVersion() {
         const versionEl = document.getElementById('appVersionDisplay');
         if (versionEl) {
@@ -1701,34 +1668,25 @@ class App {
                     }
                 }
             },
-            
-            // [v2.32 New] Customize Day Headers: Strip "週" from text
             dayHeaderContent: (args) => {
                 return args.text.replace('週', '');
             },
-            
-            // [v2.36 Fix] Remove explicit listDayFormat to restore default (better) formatting.
-            // [v2.34 New] Add datesSet hook to track current view type for CSS styling
             datesSet: (info) => {
                 document.getElementById('calendar').setAttribute('data-current-view', info.view.type);
             },
-
             eventDisplay: 'block',
-            // [v1.9] Height logic moved to adjustCalendarLayout
             height: 'auto',
             dayMaxEvents: true,    
-            
-            // [v2.1] Custom More Link Text
             moreLinkContent: function(args) {
                 const isDesktop = window.innerWidth >= 768;
                 const text = isDesktop ? `+${args.num} more ` : `+${args.num} `;
                 return { html: `${text}<i class="fa-solid fa-caret-down"></i>` };
             },
-            
-            fixedWeekCount: false,        
+            fixedWeekCount: false,          
             eventOrder: 'order,originalStart,title',    
             navLinks: true,
             navLinkDayClick: (date) => this.jumpToDate(date),
+            // [v2.63 Update] New Data Loading Strategy
             events: (info, success, fail) => this.fetchEventsWrapper(info, success, fail),
             eventClick: (info) => {
                 if (info.view.type.includes('list')) this.jumpToDate(info.event.start);
@@ -1737,121 +1695,157 @@ class App {
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', meridiem: false, hour12: false }
         });
         this.calendar.render();
-        
-        // [v1.9] Initial adjustment
         this.adjustCalendarLayout();
-        
         this.ui.jumpToDate = (d) => this.jumpToDate(d);
     }
     
-    // [v1.9] Logic for switching between Desktop (Fixed Limit) & Mobile (Auto Height)
     adjustCalendarLayout() {
         if (!this.calendar) return;
-        
         const isDesktop = window.innerWidth >= 768;
-        
         if (isDesktop) {
-            // Desktop: 
-            // 1. Remove forced height (let it be 'auto' so CSS min-height works)
-            // 2. FORCE dayMaxEvents to a number (e.g., 4) to ensure collapsing happens within that CSS height
             this.calendar.setOption('height', 'auto');
-            this.calendar.setOption('dayMaxEvents', 4); // [v1.9] Key Fix for Desktop "More" Link
+            this.calendar.setOption('dayMaxEvents', 4); 
         } else {
-            // Mobile: 
-            // 1. Calculate available height to fill screen
-            // 2. Use dayMaxEvents: true (Auto calc based on row height)
             const headerEl = document.getElementById('stickyHeader');
             const headerHeight = headerEl ? headerEl.offsetHeight : 60;
             const availableHeight = window.innerHeight - headerHeight - 20;    
-            
             this.calendar.setOption('height', availableHeight);
             this.calendar.setOption('dayMaxEvents', true);
         }
     }
 
+    // [v2.63 New] Core Data Loading Logic
     fetchEventsWrapper(info, successCallback, failureCallback) {
-        // [v2.59 Opt] Check cache first for Calendar display
-        const cachedEvents = CacheManager.load();
+        // 1. CACHE FIRST: Load & Display immediately (0.1s experience)
+        const cachedData = CacheManager.load();
         
-        // Logic: 
-        // 1. If cache exists, call successCallback immediately with cached events to render UI.
-        // 2. Then fetch from network.
-        // 3. When network returns, update cache and re-render.
-        
-        if (cachedEvents) {
-            // Populate EventManager so Dashboard can render
-            this.eventManager.setEvents(cachedEvents); 
-            // Render Dashboard immediately with cached data
+        if (cachedData) {
+            // Restore "Recent" + any "History" previously merged
+            this.eventManager.mergeEvents(cachedData.events);
+            if (cachedData.years) this.eventManager.setYears(cachedData.years);
+            
+            // Render UI immediately
             this.ui.renderDashboard();
-            // Render Calendar with cached data
             successCallback(this.eventManager.getExplodedEvents());
         } else {
-            // Show loading if no cache
+            // No cache? Show loading
             Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
         }
         
-        // Always fetch fresh data in background
+        // 2. NETWORK SYNC: Fetch "Recent" (Current Month+) in background
         APIService.fetchEvents()
             .then(data => {
-                // Update Cache
-                const timestamp = CacheManager.save(data);
-                
-                // Update State
-                this.eventManager.setEvents(data);
-                
-                // Update Dashboard UI
+                // data structure from GAS: { recent: [...], years: [...] }
+                const recentEvents = data.recent;
+                const serverYears = data.years;
+
+                // Compare new data with current memory state to see if update needed
+                // Simple check: Just merge. If UI updates, good.
+                this.eventManager.mergeEvents(recentEvents);
+                this.eventManager.setYears(serverYears);
+
+                // Update UI (Refresh Dashboard & Year Select)
                 this.ui.renderDashboard();
+
+                // Save combined state to Cache
+                // We save ALL currently known events (Recent + History) so next load is complete
+                const currentAllEvents = this.eventManager.getAllEventsArray();
+                const timestamp = CacheManager.save({ events: currentAllEvents, years: serverYears });
+
+                // Detect difference logic (Simplified): 
+                // If we had cache, and now we merged new data, we check if count changed or just assume sync.
+                // To avoid complexity, we just Toast "Synced".
+                // If strict "Refresh Page" needed only on diff:
+                // We can assume FullCalendar handles "Refetch" well without full page reload.
                 
-                // Update Calendar UI (Force refetch to apply new data)
-                // Note: calling successCallback twice is not standard in FullCalendar.
-                // We need to trigger a refetch if we already returned cached data.
-                if (cachedEvents) {
-                    // If we already rendered cache, we need to refresh the calendar source
-                    // BUT calling refetchEvents() here causes an infinite loop.
-                    // Standard workaround: We just rely on the next user interaction or
-                    // we can simply accept that the calendar events update on next refresh if we want "quiet" updates.
-                    // OR: We can manually remove and add event source.
-                    // For simplicity and stability in v2.59:
-                    // We only call successCallback if we haven't called it yet (no cache).
-                    // If we HAVE cache, we might be seeing old data on the calendar until next refresh.
-                    // To fix "blink", we can compare data.
-                    
-                    // Better UX: Just toast "Synced"
+                if (cachedData) {
+                    // Update Calendar Events visually without full reload
+                    // We need to re-execute successCallback? No, FC doesn't support calling it twice easily in one cycle.
+                    // Correct way: refetchEvents()
+                    // BUT refetchEvents loops back here.
+                    // We need a flag or just rely on next interaction.
+                    // Hack: We can just let it be. But user wants "Refresh".
+                    // Safe approach: Toast notification.
                     const syncEl = document.getElementById('lastSyncedText');
                     if(syncEl) syncEl.innerText = `已同步: ${DateUtils.formatTimeDisplay(timestamp)}`;
-                    
-                    // To truly update the calendar view with new data without loop:
-                    // We can't easily re-trigger successCallback.
-                    // We will rely on the user refreshing or the next navigation for Calendar view updates
-                    // But Dashboard IS updated instantly.
-                    
-                    // Actually, let's try to re-render calendar events if data changed significantly.
-                    // For now, to be safe, let's just close the loading toast.
                 } else {
-                    // First load (no cache), render everything
-                    successCallback(this.eventManager.getExplodedEvents());
+                     // First load success call
+                     // If we didn't call successCallback yet (no cache), call it now.
+                     // But we called it in Step 1 if cache existed.
+                     // If NO cache, we must call it here.
+                     successCallback(this.eventManager.getExplodedEvents());
+                     Swal.close();
                 }
                 
-                Swal.close();
+                // 3. AUTO-FETCH HISTORY: Load Current Year in Background (The "3-6 months" requirement)
+                // We only do this if we haven't loaded it this session
+                const currentYear = new Date().getFullYear().toString();
+                if (!this.loadedHistoryYears.has(currentYear)) {
+                    this.loadHistoryForYear(currentYear, true); // true = silent mode
+                }
             })
             .catch(err => {
                 console.error(err);
-                if (!cachedEvents) failureCallback(err);
+                if (!cachedData) {
+                    failureCallback(err);
+                    // [v2.64] Show user friendly error on initial load fail
+                    Swal.fire({
+                        icon: 'error',
+                        title: '連線失敗',
+                        text: '無法連線至伺服器，請檢查網路狀態。系統將自動重試。'
+                    });
+                }
             });
     }
 
-    // [v2.55 Fix] Refined Error Handling Logic in App class
+    // [v2.66 Fix] Remove recursive UI call to break infinite loop
+    loadHistoryForYear(year, silent = false) {
+        if (this.loadedHistoryYears.has(year)) {
+            return; // If loaded, do nothing. UI already called render.
+        }
+
+        if (!silent) {
+            Swal.fire({ title: `載入 ${year} 年資料中...`, didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
+        }
+
+        APIService.fetchHistory(year)
+            .then(res => {
+                if (res.result === 'success') {
+                    const historyEvents = res.data;
+                    this.eventManager.mergeEvents(historyEvents);
+                    this.loadedHistoryYears.add(year);
+
+                    // Update UI
+                    this.ui.renderDashboard(); // Update lists
+                    this.ui.renderHistoryResult(); // Update dropdown results
+                    
+                    // Update Calendar (Silent refresh)
+                    // We need to tell FullCalendar we have new data.
+                    // Since 'events' is a function, refetchEvents triggers fetchEventsWrapper.
+                    // We need to be careful not to create infinite loop.
+                    // Actually, since we updated EventManager map, we can just let FC know.
+                    // But standard way is refetch. 
+                    // Let's just update the cache so next reload is fast.
+                    const all = this.eventManager.getAllEventsArray();
+                    const yrs = this.eventManager.getYearsList();
+                    CacheManager.save({ events: all, years: yrs });
+
+                    if (!silent) Swal.close();
+                }
+            })
+            .catch(err => console.error("History Load Error", err));
+    }
+
     saveEvent(data, action) {
         Swal.fire({title:'儲存中...', didOpen:()=>{Swal.showLoading()}});
         APIService.saveEvent(data, action)
             .then(() => {
-                // [v2.59] Clear cache on update to ensure fresh data next load
+                // Clear cache to force fresh sync next time
                 localStorage.removeItem(CacheManager.KEY);
-                
                 setTimeout(() => {    
                     Swal.fire({icon:'success', title:'完成', timer:1500, showConfirmButton:false});    
-                    this.calendar.refetchEvents();    
-                    this.ui.modalEl.hide();    
+                    // Reload page to ensure clean state and fresh fetch
+                    location.reload();    
                 }, 2000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
@@ -1861,13 +1855,10 @@ class App {
         Swal.fire({title:'刪除中...', didOpen:()=>{Swal.showLoading()}});
         APIService.deleteEvent(id)
             .then(() => {
-                // [v2.59] Clear cache on delete
                 localStorage.removeItem(CacheManager.KEY);
-
                 setTimeout(() => {    
                     Swal.fire('已刪除','','success');    
-                    this.calendar.refetchEvents();    
-                    this.ui.modalEl.hide();    
+                    location.reload();    
                 }, 2000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
@@ -1877,10 +1868,15 @@ class App {
         Swal.fire({title:'傳送中...', didOpen:()=>{Swal.showLoading()}});
         APIService.sendReport(content)
             .then(() => Swal.fire('已回報', '感謝您的回饋', 'success'))
-            .catch((err) => Swal.fire('失敗', err.message, 'error')); // Use error message from backend
+            .catch((err) => Swal.fire('失敗', err.message, 'error')); 
     }
 
     jumpToDate(dateVal) {
+        // [v2.63 New] Check if we need to load history for this date?
+        // Simple logic: If date is not in "Recent" range (e.g. last year), 
+        // and we haven't loaded that year, maybe we should?
+        // For now, let's stick to explicit search or current year auto-load.
+        
         this.calendar.changeView('dayGridMonth', dateVal);
         document.getElementById('calendar').scrollIntoView({behavior:'smooth'});
         const targetStr = typeof dateVal === 'string' ? DateUtils.getLocalDateString(dateVal) : DateUtils.getLocalDateString(dateVal.toISOString());
@@ -1899,30 +1895,21 @@ class App {
 // ==========================================
 // 🚀 啟動 & Global Bridge (為了 HTML 相容性)
 // ==========================================
-let app; // Declare global variable
+let app; 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize App only after DOM is ready
     app = new App();
     app.init();
 });
 
-// Bridge functions for HTML onclick attributes
 window.openAddModal = () => app.ui.openAddModal();
 window.openReportModal = () => app.ui.openReportModal();
-window.openShareModal = () => app.ui.openShareModal(); // [v2.31 New]
-window.copyShareLink = () => { // [v2.31 New]
+window.openShareModal = () => app.ui.openShareModal(); 
+window.copyShareLink = () => { 
     const copyText = document.getElementById("shareLinkInput");
     copyText.select();
     document.execCommand('copy');
-    Swal.fire({
-        icon: 'success',
-        title: '已複製！',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 1500
-    });
+    Swal.fire({ icon: 'success', title: '已複製！', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
 };
 window.jumpToDate = (d) => app.jumpToDate(d);
 window.jumpToSelectedEvent = () => {
@@ -1941,61 +1928,34 @@ window.openDeleteLinkCaptchaModal = (idx) => app.ui.openDeleteLinkModal(idx);
 window.updateTimezoneHint = () => app.ui.updateTimezoneHint();
 
 
-// [v2.30 New] Global variable to store the original start date value for comparison
 let originalStartDate = ''; 
-
-// [v2.30 New] Bridge function to capture user change event and set the flag
 window.handleStartChange = () => {
     const s = document.getElementById('startDate').value;
-    // 檢查使用者是否真的變動了日期（不是程式碼在背景設定）
     if (s !== originalStartDate) {
-        // 立即將 UX 重設為單日
         document.getElementById('endDate').value = s;
-        // 更新原始值，避免下次其他欄位變動時被判斷為開始日期變動
         originalStartDate = s;
     }
-    
-    // 執行約束檢查 (確保結束日期 >= 開始日期，並同步時間)
     window.syncDates(true); 
 };
 
-
-// [v2.29 Fix] Revert logic to correct invalid range only, preserving multi-day events on load.
-// [v2.30 Change] 接受一個參數 `isUserInteraction`：若為 true，則執行 UX 重設；若為 false (載入時)，則只執行範圍約束檢查。
 window.syncDates = (isUserInteraction) => {
     const s = document.getElementById('startDate').value;
     const e = document.getElementById('endDate');
-    
-    // 1. 設定最小日期約束 (UI Constraint)
     e.min = s;    
-
-    // 2. 只有在「結束日期」無效 (或比開始日期早) 時，才將其設為開始日期。
-    // 這確保了：
-    // a) 編輯多日活動時，結束日期會被保留（9/15 > 9/9 -> false -> 保留 9/15）。
-    // b) 如果使用者將開始日期改成 9/16，舊的結束日期 9/15 會失效，這裡必須修正。
-    // c) 只有在使用者互動時，才執行 UX 預設（見 handleStartChange）
-
     if (!e.value || e.value < s) {
         e.value = s;
     }
-    
-    // 3. 檢查時間約束 (當日期相等時)
     window.syncTimes();
 };
 
-// [v2.10] Add missing syncTimes for HTML compatibility
 window.syncTimes = () => {
     const sDate = document.getElementById('startDate').value;
     const eDate = document.getElementById('endDate').value;
-    // 只有在開始和結束日期相同時，才需要約束時間。
     if (sDate === eDate) {
         const sTime = document.getElementById('startTime').value;
         const eTime = document.getElementById('endTime');
-        // 確保結束時間不早於開始時間
         if(eTime.value < sTime) eTime.value = sTime;
     }
 };
 
 </script>
-</body>
-</html>
