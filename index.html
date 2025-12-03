@@ -1,10 +1,10 @@
-<!-- v2.67 | Fix: Skeleton Logic & Calendar Refresh Issue | 2025-12-03 -->
+<!-- v2.68 | Fix: Remove Page Reload (Speed Opt) | 2025-12-03 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.67)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.68)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -686,7 +686,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.67
+// 🏗️ 系統架構 (System Architecture) - v2.68
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -694,8 +694,8 @@ class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
-    // [v2.67 Update] Application Version
-    static get VERSION() { return 'v2.67'; } 
+    // [v2.68 Update] Application Version
+    static get VERSION() { return 'v2.68'; } 
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     static get COLORS_PERSON() {    
         return [
@@ -1110,16 +1110,7 @@ class UIManager {
         const upcoming = this.app.eventManager.getUpcomingEvents();
         const listContainer = document.getElementById('upcomingList');
         
-        // [v2.67] Fix Skeleton Logic: Only overwrite if we actually have data (or explicit empty state)
-        // If upcoming is empty, but we are in initial load state (no cache), keep skeleton.
-        // We will control this via App class state.
-        // For now, if upcoming length is 0, we check if we should show "No Events" or keep skeleton.
-        // Simplification: If App has loaded data at least once (cache or network), show real content.
-        
         if (upcoming.length === 0) {
-             // Only show "No Events" if we are sure we loaded something. 
-             // If this is called from Cache Load and Cache was empty? Show "No events".
-             // Skeleton is default HTML.
              listContainer.innerHTML = '<div class="text-center text-muted py-4 small">近期無活動</div>';
         } else {
             const activities = upcoming.filter(e => e.type === 'activity').sort((a,b)=>new Date(a.start)-new Date(b.start));
@@ -1633,6 +1624,8 @@ class App {
         this.loadedHistoryYears = new Set();
         // [v2.67 New] Track fetching state to prevent loops
         this.lastFetchTime = 0;
+        // [v2.68 New] Background Sync Flag
+        this.isBackgroundSync = false;
     }
 
     init() {
@@ -1725,70 +1718,60 @@ class App {
         }
     }
 
-    // [v2.67 Fix] Core Data Loading Logic with Skeleton & Refresh Fix
+    // [v2.69 Update] 支援 isBackground 參數，讓更新時不要跳出骨架屏
     fetchEventsWrapper(info, successCallback, failureCallback) {
-        // 1. CACHE FIRST: Load & Display immediately (0.1s experience)
+        // 1. 嘗試讀取快取
         const cachedData = CacheManager.load();
-        
+        const isBackground = this.isBackgroundSync; // 判斷是否為背景靜默更新
+
         if (cachedData) {
-            // Restore "Recent" + any "History" previously merged
             this.eventManager.mergeEvents(cachedData.events);
             if (cachedData.years) this.eventManager.setYears(cachedData.years);
-            
-            // Render UI immediately (Skeleton disappears here if cache exists)
             this.ui.renderDashboard();
             successCallback(this.eventManager.getExplodedEvents());
         } else {
-            // [v2.67] Scenario B: No Cache -> Show Skeleton (Do NOT call renderDashboard yet)
-            // Show non-intrusive loading
-            Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
+            // 如果沒有快取，且不是背景更新，才顯示載入中提示
+            if (!isBackground) {
+                Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
+            }
         }
-        
-        // 2. NETWORK SYNC Logic with Debounce
-        // Prevent frequent fetching (e.g., triggered by refetchEvents loops)
+
+        // 2. 網路同步 (Debounce 防止頻繁觸發)
         const now = Date.now();
-        if (now - this.lastFetchTime < 10000 && this.eventManager.getAllEventsArray().length > 0) {
-             // If recently fetched and we have data, stop here.
-             return; 
+        // 如果距離上次讀取不到 2秒，且已有資料，則略過 (避免 FullCalendar 頻繁觸發)
+        if (now - this.lastFetchTime < 2000 && this.eventManager.getAllEventsArray().length > 0) {
+            return; 
         }
         this.lastFetchTime = now;
 
         APIService.fetchEvents()
             .then(data => {
-                // data structure from GAS: { recent: [...], years: [...] }
                 const recentEvents = data.recent;
                 const serverYears = data.years;
 
-                // Compare logic is omitted for simplicity, we just merge.
                 this.eventManager.mergeEvents(recentEvents);
                 this.eventManager.setYears(serverYears);
-
-                // Update UI (Refresh Dashboard to remove skeleton or update list)
                 this.ui.renderDashboard();
 
-                // Save combined state to Cache
+                // 更新快取
                 const currentAllEvents = this.eventManager.getAllEventsArray();
                 const timestamp = CacheManager.save({ events: currentAllEvents, years: serverYears });
 
-                // [v2.67 Fix] Force Calendar Update if we didn't call successCallback above (or even if we did)
-                // If we already called successCallback (Cache hit), calling it again won't refresh the view in FC standard flow easily.
-                // We MUST use refetchEvents() to update the calendar view if data changed.
-                // BUT refetchEvents calls this function again.
-                // The debounce check above (lastFetchTime) prevents the infinite loop.
-                
                 if (cachedData) {
                     const syncEl = document.getElementById('lastSyncedText');
                     if(syncEl) syncEl.innerText = `已同步: ${DateUtils.formatTimeDisplay(timestamp)}`;
                     
-                    // Force refresh to show new data on calendar
+                    // [v2.69] 這裡很重要：更新完資料後，重新渲染日曆，但不觸發無限迴圈
+                    // 暫時關閉 refetch，避免再次呼叫 fetchEventsWrapper
+                    this.isBackgroundSync = true; 
                     this.calendar.refetchEvents(); 
+                    this.isBackgroundSync = false;
                 } else {
-                     // First load success call (No cache scenario)
                      successCallback(this.eventManager.getExplodedEvents());
                      Swal.close();
                 }
                 
-                // 3. AUTO-FETCH HISTORY: Load Current Year in Background
+                // 自動載入今年歷史
                 const currentYear = new Date().getFullYear().toString();
                 if (!this.loadedHistoryYears.has(currentYear)) {
                     this.loadHistoryForYear(currentYear, true); 
@@ -1796,13 +1779,9 @@ class App {
             })
             .catch(err => {
                 console.error(err);
-                if (!cachedData) {
+                if (!cachedData && !isBackground) {
                     failureCallback(err);
-                    Swal.fire({
-                        icon: 'error',
-                        title: '連線失敗',
-                        text: '無法連線至伺服器，請檢查網路狀態。系統將自動重試。'
-                    });
+                    Swal.fire({ icon: 'error', title: '連線失敗', text: '無法連線至伺服器。' });
                 }
             });
     }
@@ -1842,30 +1821,48 @@ class App {
             .catch(err => console.error("History Load Error", err));
     }
 
+    // [v2.69 Update] 移除 location.reload()，改為背景更新
     saveEvent(data, action) {
         Swal.fire({title:'儲存中...', didOpen:()=>{Swal.showLoading()}});
+        
         APIService.saveEvent(data, action)
             .then(() => {
-                // Clear cache to force fresh sync next time
+                // 1. 清除舊快取 (確保下次進來是新的)
                 localStorage.removeItem(CacheManager.KEY);
-                setTimeout(() => {    
-                    Swal.fire({icon:'success', title:'完成', timer:1500, showConfirmButton:false});    
-                    // Reload page to ensure clean state and fresh fetch
-                    location.reload();    
-                }, 2000);
+                
+                // 2. 顯示成功訊息 (縮短時間)
+                Swal.fire({icon:'success', title:'完成', timer:1000, showConfirmButton:false});
+                
+                // 3. 關閉視窗
+                this.ui.modalEl.hide();
+
+                // 4. [關鍵優化] 不重新整理網頁，而是直接告訴日曆「請去抓最新資料」
+                // 設定旗標，讓 fetchEventsWrapper 知道這次是背景更新，不要跳 Loading
+                this.isBackgroundSync = true; 
+                this.calendar.refetchEvents();
+                
+                // 5. 稍微延遲後重置旗標 (保險起見)
+                setTimeout(() => { this.isBackgroundSync = false; }, 1000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
 
+    // [v2.69 Update] 移除 location.reload()，改為背景更新
     deleteEvent(id) {
         Swal.fire({title:'刪除中...', didOpen:()=>{Swal.showLoading()}});
+        
         APIService.deleteEvent(id)
             .then(() => {
                 localStorage.removeItem(CacheManager.KEY);
-                setTimeout(() => {    
-                    Swal.fire('已刪除','','success');    
-                    location.reload();    
-                }, 2000);
+                
+                Swal.fire({icon:'success', title:'已刪除', timer:1000, showConfirmButton:false});
+                
+                this.ui.modalEl.hide();
+                
+                // [關鍵優化] 背景更新
+                this.isBackgroundSync = true;
+                this.calendar.refetchEvents();
+                setTimeout(() => { this.isBackgroundSync = false; }, 1000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
@@ -1960,3 +1957,5 @@ window.syncTimes = () => {
 };
 
 </script>
+</body>
+</html>
