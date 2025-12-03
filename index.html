@@ -1,10 +1,10 @@
-<!-- v2.68 | Fix: Remove Page Reload (Speed Opt) | 2025-12-03 -->
+<!-- v2.70 | Fix: Stable Sync & Cache Reset | 2025-12-03 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.68)</title>
+    <title>泰國天茂佛堂_共同行事曆 (v2.70)</title>
     
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -686,7 +686,7 @@
 
 <script>
 // ==========================================
-// 🏗️ 系統架構 (System Architecture) - v2.68
+// 🏗️ 系統架構 (System Architecture) - v2.70
 // ==========================================
 
 // 1. Config: 靜態設定檔
@@ -694,8 +694,8 @@ class Config {
     static get API_URL() { return 'https://script.google.com/macros/s/AKfycbwezycs59fxhwvksKUgWzByIj9a5bHRH2ByH0O7848HFxM7Ls2YjflGfqwx4okxROEE/exec'; }
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
-    // [v2.68 Update] Application Version
-    static get VERSION() { return 'v2.68'; } 
+    // [v2.70 Update] Application Version
+    static get VERSION() { return 'v2.70'; } 
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     static get COLORS_PERSON() {    
         return [
@@ -720,7 +720,8 @@ class Config {
 
 // [v2.59 New] CacheManager: Handle localStorage operations
 class CacheManager {
-    static get KEY() { return 'calendar_events_cache'; }
+    // [v2.70 Fix] Update Key to force flush cache
+    static get KEY() { return 'calendar_events_cache_v3'; }
     static get TIMESTAMP_KEY() { return 'calendar_last_synced'; }
 
     static save(data) {
@@ -949,23 +950,41 @@ class LinkManager {
     }
 }
 
-// 6. EventManager: 資料邏輯層
+// 6. EventManager: 資料邏輯層 (v2.70 Fix)
 class EventManager {
     constructor() {
-        // [v2.63 Update] Use Map for efficient merging of events by ID
         this.eventsMap = new Map();
         this.yearList = [];
     }
 
-    // [v2.63 Update] Merge logic for Cache/Recent/History
+    // [v2.70 New] Sync recent events to remove zombies
+    syncRecentEvents(newEvents) {
+        if (!newEvents || !Array.isArray(newEvents)) return;
+
+        const now = new Date();
+        const rangeStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const rangeStartStr = DateUtils.getLocalDateString(rangeStart.toISOString());
+        const newIds = new Set(newEvents.map(e => e.id));
+
+        for (const [id, event] of this.eventsMap.entries()) {
+            if (event.start) {
+                const eventDateStr = DateUtils.getLocalDateString(event.start);
+                if (eventDateStr >= rangeStartStr) {
+                    if (!newIds.has(id)) {
+                        this.eventsMap.delete(id);
+                    }
+                }
+            }
+        }
+        this.mergeEvents(newEvents);
+    }
+
     mergeEvents(newEvents) {
         if (!newEvents || !Array.isArray(newEvents)) return;
         
         newEvents.forEach(item => {
-            // [v2.49] Frontend Filter for Soft Delete
             if (item.isDeleted === true || item.isDeleted === "true") return;
 
-            // [v2.51] Smart Correction for Swapped Columns
             let correctedTitle = item.title;
             let correctedType = item.type;
             if ((item.title === 'activity' || item.title === 'person') && 
@@ -993,8 +1012,6 @@ class EventManager {
                 order: itemOrder,
                 type: type
             };
-            
-            // Upsert into Map (Last write wins, assuming newer fetch is better)
             this.eventsMap.set(item.id, eventObj);
         });
     }
@@ -1064,7 +1081,6 @@ class EventManager {
     }
 
     getYearsList() {
-        // Return server provided years if available, otherwise fallback to local calculation
         if (this.yearList.length > 0) return this.yearList;
         const years = new Set(this.getAllEventsArray().map(e => DateUtils.getLocalDateString(e.start).substring(0, 4)));
         return Array.from(years).sort((a, b) => b - a);
@@ -1074,7 +1090,6 @@ class EventManager {
         return this.eventsMap.get(id);
     }
     
-    // [v2.63 New] Clear all data (for fresh load scenarios if needed)
     clear() {
         this.eventsMap.clear();
         this.yearList = [];
@@ -1624,8 +1639,6 @@ class App {
         this.loadedHistoryYears = new Set();
         // [v2.67 New] Track fetching state to prevent loops
         this.lastFetchTime = 0;
-        // [v2.68 New] Background Sync Flag
-        this.isBackgroundSync = false;
     }
 
     init() {
@@ -1690,7 +1703,7 @@ class App {
             eventOrder: 'order,originalStart,title',    
             navLinks: true,
             navLinkDayClick: (date) => this.jumpToDate(date),
-            // [v2.67 Update] Data Loading Strategy
+            // [v2.70 Update] Use syncRecentEvents in wrapper
             events: (info, success, fail) => this.fetchEventsWrapper(info, success, fail),
             eventClick: (info) => {
                 if (info.view.type.includes('list')) this.jumpToDate(info.event.start);
@@ -1718,29 +1731,24 @@ class App {
         }
     }
 
-    // [v2.69 Update] 支援 isBackground 參數，讓更新時不要跳出骨架屏
+    // [v2.70 Update] Sync Logic to prevent Zombies
     fetchEventsWrapper(info, successCallback, failureCallback) {
-        // 1. 嘗試讀取快取
+        // 1. CACHE FIRST
         const cachedData = CacheManager.load();
-        const isBackground = this.isBackgroundSync; // 判斷是否為背景靜默更新
-
+        
         if (cachedData) {
             this.eventManager.mergeEvents(cachedData.events);
             if (cachedData.years) this.eventManager.setYears(cachedData.years);
             this.ui.renderDashboard();
             successCallback(this.eventManager.getExplodedEvents());
         } else {
-            // 如果沒有快取，且不是背景更新，才顯示載入中提示
-            if (!isBackground) {
-                Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
-            }
+            Swal.fire({ title: '資料同步中...', didOpen: () => { Swal.showLoading() }, toast: true, position: 'top-end', showConfirmButton: false });
         }
-
-        // 2. 網路同步 (Debounce 防止頻繁觸發)
+        
+        // 2. NETWORK SYNC
         const now = Date.now();
-        // 如果距離上次讀取不到 2秒，且已有資料，則略過 (避免 FullCalendar 頻繁觸發)
         if (now - this.lastFetchTime < 2000 && this.eventManager.getAllEventsArray().length > 0) {
-            return; 
+             return; 
         }
         this.lastFetchTime = now;
 
@@ -1749,29 +1757,24 @@ class App {
                 const recentEvents = data.recent;
                 const serverYears = data.years;
 
-                this.eventManager.mergeEvents(recentEvents);
+                // [v2.70] Use syncRecentEvents to remove deleted items
+                this.eventManager.syncRecentEvents(recentEvents);
                 this.eventManager.setYears(serverYears);
+
                 this.ui.renderDashboard();
 
-                // 更新快取
                 const currentAllEvents = this.eventManager.getAllEventsArray();
                 const timestamp = CacheManager.save({ events: currentAllEvents, years: serverYears });
 
                 if (cachedData) {
                     const syncEl = document.getElementById('lastSyncedText');
                     if(syncEl) syncEl.innerText = `已同步: ${DateUtils.formatTimeDisplay(timestamp)}`;
-                    
-                    // [v2.69] 這裡很重要：更新完資料後，重新渲染日曆，但不觸發無限迴圈
-                    // 暫時關閉 refetch，避免再次呼叫 fetchEventsWrapper
-                    this.isBackgroundSync = true; 
                     this.calendar.refetchEvents(); 
-                    this.isBackgroundSync = false;
                 } else {
                      successCallback(this.eventManager.getExplodedEvents());
                      Swal.close();
                 }
                 
-                // 自動載入今年歷史
                 const currentYear = new Date().getFullYear().toString();
                 if (!this.loadedHistoryYears.has(currentYear)) {
                     this.loadHistoryForYear(currentYear, true); 
@@ -1779,7 +1782,7 @@ class App {
             })
             .catch(err => {
                 console.error(err);
-                if (!cachedData && !isBackground) {
+                if (!cachedData) {
                     failureCallback(err);
                     Swal.fire({ icon: 'error', title: '連線失敗', text: '無法連線至伺服器。' });
                 }
@@ -1821,48 +1824,30 @@ class App {
             .catch(err => console.error("History Load Error", err));
     }
 
-    // [v2.69 Update] 移除 location.reload()，改為背景更新
+    // [v2.70 Update] Stable Sync: Use reload()
     saveEvent(data, action) {
         Swal.fire({title:'儲存中...', didOpen:()=>{Swal.showLoading()}});
-        
         APIService.saveEvent(data, action)
             .then(() => {
-                // 1. 清除舊快取 (確保下次進來是新的)
                 localStorage.removeItem(CacheManager.KEY);
-                
-                // 2. 顯示成功訊息 (縮短時間)
-                Swal.fire({icon:'success', title:'完成', timer:1000, showConfirmButton:false});
-                
-                // 3. 關閉視窗
-                this.ui.modalEl.hide();
-
-                // 4. [關鍵優化] 不重新整理網頁，而是直接告訴日曆「請去抓最新資料」
-                // 設定旗標，讓 fetchEventsWrapper 知道這次是背景更新，不要跳 Loading
-                this.isBackgroundSync = true; 
-                this.calendar.refetchEvents();
-                
-                // 5. 稍微延遲後重置旗標 (保險起見)
-                setTimeout(() => { this.isBackgroundSync = false; }, 1000);
+                setTimeout(() => {    
+                    Swal.fire({icon:'success', title:'完成', timer:1500, showConfirmButton:false});    
+                    location.reload();    
+                }, 2000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
 
-    // [v2.69 Update] 移除 location.reload()，改為背景更新
+    // [v2.70 Update] Stable Sync: Use reload()
     deleteEvent(id) {
         Swal.fire({title:'刪除中...', didOpen:()=>{Swal.showLoading()}});
-        
         APIService.deleteEvent(id)
             .then(() => {
                 localStorage.removeItem(CacheManager.KEY);
-                
-                Swal.fire({icon:'success', title:'已刪除', timer:1000, showConfirmButton:false});
-                
-                this.ui.modalEl.hide();
-                
-                // [關鍵優化] 背景更新
-                this.isBackgroundSync = true;
-                this.calendar.refetchEvents();
-                setTimeout(() => { this.isBackgroundSync = false; }, 1000);
+                setTimeout(() => {    
+                    Swal.fire('已刪除','','success');    
+                    location.reload();    
+                }, 2000);
             })
             .catch((err) => Swal.fire('失敗', err.message, 'error'));
     }
