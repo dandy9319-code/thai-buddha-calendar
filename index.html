@@ -4,8 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>泰國天茂佛堂_共同行事曆 (v2.72)</title>
-    
+<title>泰國天茂佛堂_共同行事曆 (v2.74)</title>
+
+    <!-- [APP Icon 設定] -->
+    <meta name="apple-mobile-web-app-title" content="天茂佛堂">
+    <meta name="application-name" content="天茂佛堂">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!-- [v2.74 Fix] 更新為正確的 Logo 直連連結 (Google Drive Thumbnail API) -->
+    <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=134j4swDPEEuVk3vBFT3riQO6T4z3k_F5&sz=w1000">
+    <link rel="icon" type="image/png" href="https://drive.google.com/thumbnail?id=134j4swDPEEuVk3vBFT3riQO6T4z3k_F5&sz=w1000">    
     <!-- 核心套件 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -357,24 +365,26 @@
                 box-shadow: none; 
             }
 
-            /* [v2.71 New] Install Button Mobile Style */
+/* [v2.71 New] Install Button Mobile Style */
             .btn-install {
                 background-color: #7E57C2; /* 羅蘭紫 */
                 color: white;
                 border: none;
                 box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+                border-radius: 30px !important; /* [v2.73 Fix] 加入圓角 */
             }
             
-            /* [v2.71 New] Mobile Layout: Force Install button to new line */
+/* [v2.71 New] Mobile Layout: Force Install button to new line */
             .left-btn-group {
-                flex-wrap: wrap !important;
+                flex-wrap: wrap !important; /* 允許換行 */
             }
             .btn-install {
-                width: 100%; /* 手機版佔滿整行 */
+                width: auto !important; /* [v2.74 Fix] 改回自動寬度，不要佔滿整行 */
+                min-width: 100px; /* 設個最小寬度確保好按 */
                 justify-content: center;
-                margin-top: 2px;
-            }
-        }
+                margin-top: 5px; /* 稍微增加與上一行的間距 */
+                border-radius: 30px !important; 
+            }        }
 
         /* [v2.71 New] Desktop Install Button Style */
         @media (min-width: 768px) {
@@ -741,7 +751,7 @@ class Config {
     static get API_SECRET() { return 'TianMao2025_SecretKey'; } 
 
     // [v2.70 Update] Application Version
-    static get VERSION() { return 'v2.72'; } 
+    static get VERSION() { return 'v2.74'; } 
     static get COLOR_ACTIVITY() { return '#ffe9f3'; }    
     static get COLORS_PERSON() {    
         return [
